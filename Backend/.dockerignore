@@ -1,0 +1,58 @@
+# .NET build artifacts
+**/bin/
+**/obj/
+**/out/
+**/logs/
+
+# Database files
+**/*.db
+**/*.db-*
+
+# User secrets and environment files
+**/.env
+**/.env.*
+**/appsettings.Development.json
+**/appsettings.Local.json
+
+# Visual Studio files
+.vs/
+.vscode/
+*.user
+*.suo
+*.sln.docstates
+
+# Development tools
+**/.editorconfig
+**/.gitignore
+
+# Test results
+**/TestResults/
+**/*.trx
+**/*.coverage
+
+# Package files
+*.nupkg
+*.snupkg
+
+# Temporary files
+**/tmp/
+**/temp/
+**/*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE files
+**/.idea/
+**/launchSettings.json
+
+# Docker files (to avoid recursion)
+**/Dockerfile*
+**/docker-compose*
+**/.dockerignore

@@ -1,0 +1,107 @@
+# Development overrides for docker-compose.yml
+# This file is automatically loaded when running docker-compose commands
+# Use for development-specific configurations
+
+version: '3.8'
+
+services:
+  # Development PostgreSQL settings
+  postgres:
+    environment:
+      POSTGRES_PASSWORD: DevPassword123!
+    ports:
+      - "5433:5432"  # Different port to avoid conflicts with local PostgreSQL
+    volumes:
+      # Add development data seeding if needed
+      - ./Backend/scripts/dev-seed.sql:/docker-entrypoint-initdb.d/dev-seed.sql:ro
+
+  # Development Redis settings
+  redis:
+    environment:
+      REDIS_PASSWORD: DevRedisPassword123!
+    ports:
+      - "6380:6379"  # Different port to avoid conflicts with local Redis
+
+  # Development Backend API
+  backend:
+    build:
+      context: ./Backend
+      dockerfile: Dockerfile
+      target: build  # Use build stage for faster development
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__DefaultConnection: "Host=postgres;Database=ecommerce;Username=ecommerce_user;Password=DevPassword123!;Port=5432"
+      Redis__ConnectionString: "redis:6379,password=DevRedisPassword123!"
+      JwtSettings__Secret: "DevelopmentJwtSecretKeyThatIsAtLeast256BitsLongForDevEnvironment123456"
+      JwtSettings__ExpiryInMinutes: 1440  # 24 hours for development
+      RefreshTokenSettings__ExpiryInDays: 30  # 30 days for development
+      AdminSettings__DefaultAdminEmail: "admin@dev.com"
+      AdminSettings__DefaultAdminPassword: "DevAdmin123!"
+      Logging__LogLevel__Default: "Debug"
+      Logging__LogLevel__Microsoft: "Information"
+      Logging__LogLevel__ECommerce: "Debug"
+    ports:
+      - "5001:80"  # Different port for development
+    volumes:
+      # Mount source code for hot reload (if needed)
+      - ./Backend/src:/app/src:ro
+      # Mount appsettings for easy configuration changes
+      - ./Backend/src/ECommerce.API/appsettings.Development.json:/app/appsettings.Development.json:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  # Development Frontend
+  frontend:
+    build:
+      context: ./Frontend/ecommerce-frontend
+      dockerfile: Dockerfile.dev  # Use development Dockerfile if available
+    environment:
+      - NODE_ENV=development
+      - REACT_APP_API_URL=http://localhost:5001
+      - GENERATE_SOURCEMAP=true
+    ports:
+      - "3001:80"  # Different port for development
+    volumes:
+      # Mount source code for hot reload
+      - ./Frontend/ecommerce-frontend/src:/app/src:ro
+      - ./Frontend/ecommerce-frontend/public:/app/public:ro
+    depends_on:
+      backend:
+        condition: service_healthy
+
+  # Development database admin tool (optional)
+  pgadmin:
+    image: dpage/pgadmin4:7
+    container_name: ecommerce-pgadmin-dev
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@dev.com
+      PGADMIN_DEFAULT_PASSWORD: DevPgAdmin123!
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    ports:
+      - "8080:80"
+    networks:
+      - ecommerce-network
+    depends_on:
+      - postgres
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+
+  # Redis admin tool (optional)
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: ecommerce-redis-commander-dev
+    environment:
+      REDIS_HOSTS: local:redis:6379:0:DevRedisPassword123!
+    ports:
+      - "8081:8081"
+    networks:
+      - ecommerce-network
+    depends_on:
+      - redis
+
+volumes:
+  pgadmin_data:
+    driver: local

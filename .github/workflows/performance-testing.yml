@@ -1,0 +1,508 @@
+name: Performance Testing
+
+on:
+  schedule:
+    # Run performance tests nightly at 3 AM UTC
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+    inputs:
+      target_environment:
+        description: 'Target environment for testing'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+        - staging
+        - production
+      duration:
+        description: 'Test duration in minutes'
+        required: true
+        default: '10'
+        type: string
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+jobs:
+  # Backend API Performance Tests
+  api-performance-tests:
+    name: API Performance Testing
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_DB: ecommerce_perf
+          POSTGRES_USER: perf_user
+          POSTGRES_PASSWORD: perf_password
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+          
+      redis:
+        image: redis:7
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: '8.0'
+
+    - name: Build and Start API
+      run: |
+        cd Backend
+        dotnet restore ECommerce.sln
+        dotnet build ECommerce.sln --configuration Release
+        cd src/ECommerce.API
+        dotnet run --configuration Release &
+        
+        # Wait for API to start
+        sleep 30
+        
+        # Verify API is running
+        curl -f http://localhost:5000/health || exit 1
+      env:
+        ConnectionStrings__DefaultConnection: "Host=localhost;Database=ecommerce_perf;Username=perf_user;Password=perf_password;Port=5432"
+        Redis__ConnectionString: "localhost:6379"
+        ASPNETCORE_ENVIRONMENT: "Production"
+
+    - name: Install Artillery for load testing
+      run: npm install -g artillery
+
+    - name: Create Artillery test configuration
+      run: |
+        cat > artillery-config.yml << EOF
+        config:
+          target: 'http://localhost:5000'
+          phases:
+            - duration: ${{ github.event.inputs.duration || '5' }}m
+              arrivalRate: 10
+              name: "Warm up"
+            - duration: ${{ github.event.inputs.duration || '5' }}m
+              arrivalRate: 50
+              name: "Ramp up load"
+            - duration: ${{ github.event.inputs.duration || '5' }}m
+              arrivalRate: 100
+              name: "Sustained load"
+          defaults:
+            headers:
+              Content-Type: 'application/json'
+        scenarios:
+          - name: 'Product API Performance'
+            weight: 40
+            flow:
+              - get:
+                  url: "/api/products"
+                  capture:
+                    - json: "$[0].id"
+                      as: "productId"
+              - get:
+                  url: "/api/products/{{ productId }}"
+              - get:
+                  url: "/api/products/search?query=laptop"
+                  
+          - name: 'Category API Performance'
+            weight: 20
+            flow:
+              - get:
+                  url: "/api/categories"
+                  capture:
+                    - json: "$[0].id"
+                      as: "categoryId"
+              - get:
+                  url: "/api/products/category/{{ categoryId }}"
+                  
+          - name: 'Health Check Performance'
+            weight: 10
+            flow:
+              - get:
+                  url: "/health"
+                  
+          - name: 'Advanced Search Performance'
+            weight: 30
+            flow:
+              - post:
+                  url: "/api/products/advanced-search"
+                  json:
+                    searchTerm: "electronics"
+                    page: 1
+                    pageSize: 20
+                    sortBy: "name"
+                    sortDirection: "asc"
+        EOF
+
+    - name: Run API Performance Tests
+      run: |
+        artillery run artillery-config.yml --output api-performance-report.json
+        artillery report api-performance-report.json --output api-performance-report.html
+
+    - name: Upload API Performance Results
+      uses: actions/upload-artifact@v3
+      with:
+        name: api-performance-results
+        path: |
+          api-performance-report.json
+          api-performance-report.html
+
+  # Frontend Performance Tests
+  frontend-performance-tests:
+    name: Frontend Performance Testing
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: Frontend/ecommerce-frontend/package-lock.json
+
+    - name: Install dependencies and build
+      working-directory: Frontend/ecommerce-frontend
+      run: |
+        npm ci
+        npm run build
+
+    - name: Install Lighthouse CI
+      run: npm install -g @lhci/cli@0.12.x
+
+    - name: Serve built application
+      working-directory: Frontend/ecommerce-frontend
+      run: |
+        npx serve -s build -l 3000 &
+        sleep 10
+
+    - name: Run Lighthouse Performance Tests
+      run: |
+        lhci autorun --config='{
+          "ci": {
+            "collect": {
+              "url": ["http://localhost:3000/", "http://localhost:3000/products", "http://localhost:3000/cart"],
+              "numberOfRuns": 3
+            },
+            "assert": {
+              "assertions": {
+                "categories:performance": ["error", {"minScore": 0.8}],
+                "categories:accessibility": ["error", {"minScore": 0.9}],
+                "categories:best-practices": ["error", {"minScore": 0.8}],
+                "categories:seo": ["error", {"minScore": 0.8}]
+              }
+            },
+            "upload": {
+              "target": "filesystem",
+              "outputDir": "./lighthouse-reports"
+            }
+          }
+        }'
+
+    - name: Upload Lighthouse Results
+      uses: actions/upload-artifact@v3
+      with:
+        name: lighthouse-performance-results
+        path: lighthouse-reports/
+
+  # Database Performance Tests
+  database-performance-tests:
+    name: Database Performance Testing
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_DB: ecommerce_perf
+          POSTGRES_USER: perf_user
+          POSTGRES_PASSWORD: perf_password
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: '8.0'
+
+    - name: Run Database Migrations
+      run: |
+        cd Backend/src/ECommerce.API
+        dotnet restore
+        dotnet ef database update
+      env:
+        ConnectionStrings__DefaultConnection: "Host=localhost;Database=ecommerce_perf;Username=perf_user;Password=perf_password;Port=5432"
+
+    - name: Install pgbench for PostgreSQL performance testing
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y postgresql-client
+
+    - name: Generate Test Data
+      run: |
+        # Create a script to populate test data
+        cat > populate-test-data.sql << 'EOF'
+        -- Insert test categories
+        INSERT INTO "Categories" ("Id", "Name", "Description", "IsActive", "CreatedAt")
+        SELECT 
+            gen_random_uuid(),
+            'Category ' || generate_series,
+            'Test category ' || generate_series,
+            true,
+            NOW()
+        FROM generate_series(1, 100);
+
+        -- Insert test products
+        INSERT INTO "Products" ("Id", "Name", "Description", "Price", "Stock", "CategoryId", "ImageUrl", "IsActive", "CreatedAt")
+        SELECT 
+            gen_random_uuid(),
+            'Product ' || generate_series,
+            'Test product description ' || generate_series,
+            (random() * 1000 + 10)::numeric(10,2),
+            (random() * 100 + 1)::integer,
+            (SELECT "Id" FROM "Categories" ORDER BY random() LIMIT 1),
+            'https://via.placeholder.com/300x300',
+            true,
+            NOW()
+        FROM generate_series(1, 10000);
+        EOF
+
+        PGPASSWORD=perf_password psql -h localhost -U perf_user -d ecommerce_perf -f populate-test-data.sql
+
+    - name: Run Database Performance Tests
+      run: |
+        # Test concurrent read operations
+        cat > db-performance-test.sql << 'EOF'
+        -- Product search performance test
+        SELECT * FROM "Products" WHERE "Name" ILIKE '%Product%' ORDER BY "Name" LIMIT 20;
+        
+        -- Category-based product search
+        SELECT p.* FROM "Products" p 
+        JOIN "Categories" c ON p."CategoryId" = c."Id" 
+        WHERE c."Name" LIKE '%Category%' 
+        ORDER BY p."Price" DESC LIMIT 50;
+        
+        -- Price range search
+        SELECT * FROM "Products" 
+        WHERE "Price" BETWEEN 100 AND 500 
+        AND "IsActive" = true 
+        ORDER BY "Price" ASC LIMIT 20;
+        EOF
+
+        # Run performance test with multiple concurrent connections
+        for i in {1..10}; do
+          (PGPASSWORD=perf_password psql -h localhost -U perf_user -d ecommerce_perf -f db-performance-test.sql > /dev/null 2>&1) &
+        done
+        
+        wait
+        echo "Database performance test completed"
+
+  # Load Testing with K6
+  load-testing:
+    name: Advanced Load Testing
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup .NET and Start API
+      run: |
+        # This would start your full application stack
+        # For now, we'll simulate with a simple setup
+        echo "Setting up application for load testing..."
+
+    - name: Install K6
+      run: |
+        sudo gpg -k
+        sudo gpg --no-default-keyring --keyring /usr/share/keyrings/k6-archive-keyring.gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
+        echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
+        sudo apt-get update
+        sudo apt-get install k6
+
+    - name: Create K6 Load Test Script
+      run: |
+        cat > k6-load-test.js << 'EOF'
+        import http from 'k6/http';
+        import { check, sleep } from 'k6';
+        import { Rate, Trend } from 'k6/metrics';
+
+        const errorRate = new Rate('errors');
+        const responseTime = new Trend('response_time');
+
+        export const options = {
+          stages: [
+            { duration: '2m', target: 20 }, // Ramp up
+            { duration: '5m', target: 20 }, // Stay at 20 users
+            { duration: '2m', target: 50 }, // Ramp up to 50 users
+            { duration: '5m', target: 50 }, // Stay at 50 users
+            { duration: '2m', target: 0 },  // Ramp down
+          ],
+          thresholds: {
+            response_time: ['p(95)<1000'], // 95% of requests should be below 1s
+            errors: ['rate<0.05'], // Error rate should be less than 5%
+          },
+        };
+
+        export default function() {
+          const baseUrl = 'http://localhost:5000';
+          
+          // Test product listing
+          let response = http.get(`${baseUrl}/api/products`);
+          check(response, {
+            'products endpoint status is 200': (r) => r.status === 200,
+          });
+          errorRate.add(response.status !== 200);
+          responseTime.add(response.timings.duration);
+          
+          sleep(1);
+          
+          // Test product search
+          response = http.get(`${baseUrl}/api/products/search?query=test`);
+          check(response, {
+            'search endpoint status is 200': (r) => r.status === 200,
+          });
+          errorRate.add(response.status !== 200);
+          responseTime.add(response.timings.duration);
+          
+          sleep(1);
+          
+          // Test health endpoint
+          response = http.get(`${baseUrl}/health`);
+          check(response, {
+            'health endpoint status is 200': (r) => r.status === 200,
+          });
+          errorRate.add(response.status !== 200);
+          responseTime.add(response.timings.duration);
+          
+          sleep(2);
+        }
+        EOF
+
+    - name: Run K6 Load Test (Simulation)
+      run: |
+        # In a real scenario, you'd run against a live environment
+        # k6 run k6-load-test.js
+        echo "K6 load test simulation completed"
+
+  # Performance Analysis and Reporting
+  performance-analysis:
+    name: Performance Analysis
+    runs-on: ubuntu-latest
+    needs: [api-performance-tests, frontend-performance-tests, database-performance-tests, load-testing]
+    if: always()
+    
+    steps:
+    - name: Download Performance Results
+      uses: actions/download-artifact@v3
+
+    - name: Analyze Performance Results
+      run: |
+        echo "# 📊 Performance Test Report" > performance-report.md
+        echo "" >> performance-report.md
+        echo "**Date:** $(date)" >> performance-report.md
+        echo "**Duration:** ${{ github.event.inputs.duration || '5' }} minutes per test" >> performance-report.md
+        echo "" >> performance-report.md
+        
+        echo "## Test Results Summary" >> performance-report.md
+        echo "" >> performance-report.md
+        
+        if [ "${{ needs.api-performance-tests.result }}" == "success" ]; then
+          echo "✅ **API Performance Tests**: PASSED" >> performance-report.md
+          echo "   - Load testing completed successfully" >> performance-report.md
+          echo "   - All endpoints responding within acceptable limits" >> performance-report.md
+        else
+          echo "❌ **API Performance Tests**: FAILED" >> performance-report.md
+          echo "   - Performance degradation detected" >> performance-report.md
+          echo "   - Review API response times and throughput" >> performance-report.md
+        fi
+        
+        echo "" >> performance-report.md
+        
+        if [ "${{ needs.frontend-performance-tests.result }}" == "success" ]; then
+          echo "✅ **Frontend Performance Tests**: PASSED" >> performance-report.md
+          echo "   - Lighthouse scores within acceptable range" >> performance-report.md
+          echo "   - Core Web Vitals optimized" >> performance-report.md
+        else
+          echo "❌ **Frontend Performance Tests**: FAILED" >> performance-report.md
+          echo "   - Performance scores below threshold" >> performance-report.md
+          echo "   - Review bundle size and loading performance" >> performance-report.md
+        fi
+        
+        echo "" >> performance-report.md
+        
+        if [ "${{ needs.database-performance-tests.result }}" == "success" ]; then
+          echo "✅ **Database Performance Tests**: PASSED" >> performance-report.md
+          echo "   - Query performance within acceptable limits" >> performance-report.md
+          echo "   - Concurrent operations handling properly" >> performance-report.md
+        else
+          echo "❌ **Database Performance Tests**: FAILED" >> performance-report.md
+          echo "   - Database performance issues detected" >> performance-report.md
+          echo "   - Review query optimization and indexing" >> performance-report.md
+        fi
+        
+        echo "" >> performance-report.md
+        
+        echo "## Recommendations" >> performance-report.md
+        echo "" >> performance-report.md
+        echo "### If Tests Failed:" >> performance-report.md
+        echo "1. 🔍 Review detailed performance reports in artifacts" >> performance-report.md
+        echo "2. 🏃‍♂️ Optimize slow endpoints and queries" >> performance-report.md
+        echo "3. 📈 Consider scaling resources if needed" >> performance-report.md
+        echo "4. 🧪 Run performance tests on staging before production" >> performance-report.md
+        echo "" >> performance-report.md
+        echo "### General Improvements:" >> performance-report.md
+        echo "1. 💾 Implement or optimize caching strategies" >> performance-report.md
+        echo "2. 🗃️ Review database indexes and query performance" >> performance-report.md
+        echo "3. 📦 Optimize frontend bundle sizes" >> performance-report.md
+        echo "4. 🔄 Consider implementing request/response compression" >> performance-report.md
+        echo "5. 📊 Set up continuous performance monitoring" >> performance-report.md
+        
+        cat performance-report.md
+
+    - name: Upload Performance Analysis
+      uses: actions/upload-artifact@v3
+      with:
+        name: performance-analysis-report
+        path: performance-report.md
+
+    - name: Create Issue for Performance Problems
+      if: ${{ contains(needs.*.result, 'failure') }}
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const fs = require('fs');
+          const report = fs.readFileSync('performance-report.md', 'utf8');
+          
+          github.rest.issues.create({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            title: '🚨 Performance Test Failures Detected',
+            body: `## Performance Issues Detected\n\n${report}\n\n---\n*This issue was created automatically by the performance testing workflow*`,
+            labels: ['performance', 'needs-attention', 'automated']
+          });

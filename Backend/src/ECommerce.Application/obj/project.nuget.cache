@@ -1,0 +1,21 @@
+{
+  "version": 2,
+  "dgSpecHash": "vpYcqiIeSqUrezBfVWGvXqysEH9dOGGeZfyasMihHKd8bKWEXMbSuf/AgPeQUw7XPWbP/I/DNbN7toYPjvmF6A==",
+  "success": true,
+  "projectFilePath": "/home/wsl-alpdev/ECommerce/Backend/src/ECommerce.Application/ECommerce.Application.csproj",
+  "expectedPackageFiles": [
+    "/home/wsl-alpdev/.nuget/packages/fluentvalidation/12.0.0/fluentvalidation.12.0.0.nupkg.sha512",
+    "/home/wsl-alpdev/.nuget/packages/microsoft.aspnetcore.cryptography.internal/8.0.8/microsoft.aspnetcore.cryptography.internal.8.0.8.nupkg.sha512",
+    "/home/wsl-alpdev/.nuget/packages/microsoft.aspnetcore.cryptography.keyderivation/8.0.8/microsoft.aspnetcore.cryptography.keyderivation.8.0.8.nupkg.sha512",
+    "/home/wsl-alpdev/.nuget/packages/microsoft.extensions.caching.abstractions/8.0.0/microsoft.extensions.caching.abstractions.8.0.0.nupkg.sha512",
+    "/home/wsl-alpdev/.nuget/packages/microsoft.extensions.dependencyinjection/8.0.0/microsoft.extensions.dependencyinjection.8.0.0.nupkg.sha512",
+    "/home/wsl-alpdev/.nuget/packages/microsoft.extensions.dependencyinjection.abstractions/8.0.0/microsoft.extensions.dependencyinjection.abstractions.8.0.0.nupkg.sha512",
+    "/home/wsl-alpdev/.nuget/packages/microsoft.extensions.identity.core/8.0.8/microsoft.extensions.identity.core.8.0.8.nupkg.sha512",
+    "/home/wsl-alpdev/.nuget/packages/microsoft.extensions.identity.stores/8.0.8/microsoft.extensions.identity.stores.8.0.8.nupkg.sha512",
+    "/home/wsl-alpdev/.nuget/packages/microsoft.extensions.logging/8.0.0/microsoft.extensions.logging.8.0.0.nupkg.sha512",
+    "/home/wsl-alpdev/.nuget/packages/microsoft.extensions.logging.abstractions/8.0.0/microsoft.extensions.logging.abstractions.8.0.0.nupkg.sha512",
+    "/home/wsl-alpdev/.nuget/packages/microsoft.extensions.options/8.0.2/microsoft.extensions.options.8.0.2.nupkg.sha512",
+    "/home/wsl-alpdev/.nuget/packages/microsoft.extensions.primitives/8.0.0/microsoft.extensions.primitives.8.0.0.nupkg.sha512"
+  ],
+  "logs": []
+}

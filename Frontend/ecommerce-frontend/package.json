@@ -1,0 +1,64 @@
+{
+  "name": "ecommerce-frontend",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "@chakra-ui/icons": "^2.2.4",
+    "@chakra-ui/react": "^2.10.9",
+    "@chakra-ui/styled-system": "^2.12.0",
+    "@chakra-ui/system": "^2.6.2",
+    "@chakra-ui/theme": "^3.4.9",
+    "@chakra-ui/utils": "^2.2.5",
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
+    "@testing-library/dom": "^10.4.1",
+    "@testing-library/jest-dom": "^6.7.0",
+    "@testing-library/react": "^16.3.0",
+    "@testing-library/user-event": "^13.5.0",
+    "@types/jest": "^27.5.2",
+    "@types/node": "^16.18.126",
+    "@types/react": "^19.1.10",
+    "@types/react-dom": "^19.1.7",
+    "ajv": "^8.17.1",
+    "axios": "^1.11.0",
+    "eslint-config-react-app": "^7.0.1",
+    "framer-motion": "^6.5.1",
+    "i18next": "^25.4.0",
+    "i18next-browser-languagedetector": "^8.2.0",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
+    "react-i18next": "^15.7.1",
+    "react-icons": "^4.12.0",
+    "react-router-dom": "^7.8.1",
+    "react-scripts": "^0.0.0",
+    "typescript": "^4.9.5",
+    "web-vitals": "^2.1.4"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject"
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app",
+      "react-app/jest"
+    ]
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "devDependencies": {
+    "@types/react-router-dom": "^5.3.3"
+  }
+}

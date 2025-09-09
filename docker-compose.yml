@@ -1,0 +1,117 @@
+version: '3.8'
+
+services:
+  # Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: ecommerce-postgres
+    environment:
+      POSTGRES_DB: ecommerce
+      POSTGRES_USER: ecommerce_user
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-StrongPassword123!}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./Backend/scripts/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    ports:
+      - "5432:5432"
+    networks:
+      - ecommerce-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ecommerce_user -d ecommerce"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: ecommerce-redis
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-RedisPassword123!}
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    networks:
+      - ecommerce-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 10s
+
+  # Backend API
+  backend:
+    build:
+      context: ./Backend
+      dockerfile: Dockerfile
+    container_name: ecommerce-backend
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:80
+      ConnectionStrings__DefaultConnection: "Host=postgres;Database=ecommerce;Username=ecommerce_user;Password=${POSTGRES_PASSWORD:-StrongPassword123!};Port=5432"
+      Redis__ConnectionString: "redis:6379,password=${REDIS_PASSWORD:-RedisPassword123!}"
+      JwtSettings__Secret: ${JWT_SECRET:-YourSuperSecretJwtKeyThatIsAtLeast256BitsLong12345678901234567890}
+      JwtSettings__Issuer: "ECommerce.API"
+      JwtSettings__Audience: "ECommerce.Client"
+      JwtSettings__ExpiryInMinutes: 60
+      RefreshTokenSettings__ExpiryInDays: 7
+      EmailSettings__SmtpHost: ${EMAIL_SMTP_HOST:-smtp.gmail.com}
+      EmailSettings__SmtpPort: ${EMAIL_SMTP_PORT:-587}
+      EmailSettings__Username: ${EMAIL_USERNAME:-}
+      EmailSettings__Password: ${EMAIL_PASSWORD:-}
+      EmailSettings__FromEmail: ${EMAIL_FROM:-noreply@ecommerce.com}
+      AdminSettings__DefaultAdminEmail: ${ADMIN_EMAIL:-admin@ecommerce.com}
+      AdminSettings__DefaultAdminPassword: ${ADMIN_PASSWORD:-Admin123!}
+    ports:
+      - "5000:80"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - ecommerce-network
+    volumes:
+      - backend_logs:/app/logs
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    restart: unless-stopped
+
+  # Frontend
+  frontend:
+    build:
+      context: ./Frontend/ecommerce-frontend
+      dockerfile: Dockerfile
+    container_name: ecommerce-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - ecommerce-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  backend_logs:
+    driver: local
+
+networks:
+  ecommerce-network:
+    driver: bridge

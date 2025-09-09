@@ -1,0 +1,377 @@
+name: Automated Dependency Updates
+
+on:
+  schedule:
+    # Run weekly on Mondays at 6 AM UTC
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  # Update .NET dependencies
+  update-dotnet-dependencies:
+    name: Update .NET Dependencies
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: '8.0'
+
+    - name: Install dotnet outdated tool
+      run: dotnet tool install --global dotnet-outdated-tool
+
+    - name: Update .NET packages
+      working-directory: Backend
+      run: |
+        # Update to latest minor versions (safer updates)
+        dotnet outdated --upgrade --version-lock Major
+        
+        # Restore to ensure everything still works
+        dotnet restore ECommerce.sln
+        
+        # Build to verify compatibility
+        dotnet build ECommerce.sln --configuration Release
+
+    - name: Create Pull Request for .NET updates
+      uses: peter-evans/create-pull-request@v5
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        branch: auto-update/dotnet-dependencies
+        title: "🔄 Auto-update .NET dependencies"
+        body: |
+          ## 🔄 Automated .NET Dependency Updates
+          
+          This PR contains automated updates to .NET package dependencies.
+          
+          ### Changes
+          - Updated NuGet packages to latest minor versions
+          - Maintained major version compatibility
+          
+          ### Verification
+          - ✅ Solution builds successfully
+          - ⚠️ Please review breaking changes in updated packages
+          - 🧪 Run full test suite before merging
+          
+          ### Security
+          - 🛡️ Updates may include security patches
+          - 📊 Review security advisories for updated packages
+          
+          ---
+          *This PR was created automatically by the dependency update workflow*
+        commit-message: "chore: update .NET dependencies"
+        labels: |
+          dependencies
+          automated
+          .net
+        reviewers: |
+          # Add your team members here
+        draft: false
+
+  # Update Node.js dependencies
+  update-nodejs-dependencies:
+    name: Update Node.js Dependencies
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: Frontend/ecommerce-frontend/package-lock.json
+
+    - name: Install npm-check-updates
+      run: npm install -g npm-check-updates
+
+    - name: Update Node.js packages
+      working-directory: Frontend/ecommerce-frontend
+      run: |
+        # Update to latest minor versions
+        ncu -u --target minor
+        
+        # Install updated packages
+        npm install
+        
+        # Run security audit
+        npm audit --audit-level high
+        
+        # Build to verify compatibility
+        npm run build
+        
+        # Run tests to ensure nothing breaks
+        npm test -- --watchAll=false
+
+    - name: Create Pull Request for Node.js updates
+      uses: peter-evans/create-pull-request@v5
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        branch: auto-update/nodejs-dependencies
+        title: "🔄 Auto-update Node.js dependencies"
+        body: |
+          ## 🔄 Automated Node.js Dependency Updates
+          
+          This PR contains automated updates to npm package dependencies.
+          
+          ### Changes
+          - Updated npm packages to latest minor versions
+          - Updated package-lock.json
+          - Maintained major version compatibility
+          
+          ### Verification
+          - ✅ Build successful
+          - ✅ Tests passing
+          - ✅ Security audit clean
+          - ⚠️ Please review breaking changes in updated packages
+          
+          ### Security
+          - 🛡️ Updates may include security patches
+          - 📊 npm audit passed with no high-severity issues
+          
+          ---
+          *This PR was created automatically by the dependency update workflow*
+        commit-message: "chore: update Node.js dependencies"
+        labels: |
+          dependencies
+          automated
+          frontend
+          nodejs
+        reviewers: |
+          # Add your team members here
+        draft: false
+
+  # Security-focused dependency updates
+  security-updates:
+    name: Security Dependency Updates
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: '8.0'
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: Frontend/ecommerce-frontend/package-lock.json
+
+    # Check for security vulnerabilities in .NET packages
+    - name: Check .NET Security Vulnerabilities
+      working-directory: Backend
+      run: |
+        dotnet list package --vulnerable --include-transitive > vulnerable-packages.txt
+        if [ -s vulnerable-packages.txt ]; then
+          echo "DOTNET_VULNERABILITIES=true" >> $GITHUB_ENV
+          echo "Found vulnerable .NET packages:"
+          cat vulnerable-packages.txt
+        else
+          echo "DOTNET_VULNERABILITIES=false" >> $GITHUB_ENV
+          echo "No vulnerable .NET packages found"
+        fi
+
+    # Check for security vulnerabilities in Node.js packages
+    - name: Check Node.js Security Vulnerabilities
+      working-directory: Frontend/ecommerce-frontend
+      run: |
+        npm audit --json > npm-audit.json || true
+        if [ $(cat npm-audit.json | jq '.metadata.vulnerabilities.total') -gt 0 ]; then
+          echo "NODEJS_VULNERABILITIES=true" >> $GITHUB_ENV
+          echo "Found vulnerable Node.js packages:"
+          npm audit
+        else
+          echo "NODEJS_VULNERABILITIES=false" >> $GITHUB_ENV
+          echo "No vulnerable Node.js packages found"
+        fi
+
+    # Fix .NET security vulnerabilities
+    - name: Fix .NET Security Issues
+      if: env.DOTNET_VULNERABILITIES == 'true'
+      working-directory: Backend
+      run: |
+        # Try to update packages with known vulnerabilities
+        dotnet list package --vulnerable --include-transitive | grep ">" | awk '{print $2}' | while read package; do
+          echo "Updating vulnerable package: $package"
+          dotnet add package $package
+        done
+        
+        # Verify build still works
+        dotnet build ECommerce.sln --configuration Release
+
+    # Fix Node.js security vulnerabilities
+    - name: Fix Node.js Security Issues
+      if: env.NODEJS_VULNERABILITIES == 'true'
+      working-directory: Frontend/ecommerce-frontend
+      run: |
+        # Try to fix vulnerabilities automatically
+        npm audit fix --audit-level high
+        
+        # Force update critical vulnerabilities
+        npm audit fix --force
+        
+        # Verify build still works
+        npm run build
+        npm test -- --watchAll=false
+
+    # Create emergency security PR if vulnerabilities were found
+    - name: Create Security Update PR
+      if: env.DOTNET_VULNERABILITIES == 'true' || env.NODEJS_VULNERABILITIES == 'true'
+      uses: peter-evans/create-pull-request@v5
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        branch: security-update/vulnerability-fixes
+        title: "🚨 SECURITY: Fix dependency vulnerabilities"
+        body: |
+          ## 🚨 URGENT: Security Vulnerability Fixes
+          
+          This PR addresses security vulnerabilities found in project dependencies.
+          
+          ### ⚠️ Action Required
+          - **Priority**: HIGH
+          - **Review Required**: ASAP
+          - **Testing**: Full security regression testing recommended
+          
+          ### Vulnerabilities Fixed
+          ${{ env.DOTNET_VULNERABILITIES == 'true' && '- 🔴 .NET packages with known CVEs updated' || '' }}
+          ${{ env.NODEJS_VULNERABILITIES == 'true' && '- 🔴 Node.js packages with known CVEs updated' || '' }}
+          
+          ### Verification Steps
+          1. ✅ Dependencies updated to secure versions
+          2. ✅ Build verification successful
+          3. 🧪 **REQUIRED**: Run full test suite
+          4. 🛡️ **REQUIRED**: Security testing
+          5. 📋 **REQUIRED**: Review change logs for breaking changes
+          
+          ### Deployment
+          - 🚀 Consider expedited deployment after testing
+          - 📊 Monitor for any issues post-deployment
+          
+          ---
+          *This is an automated security update. Please prioritize review and testing.*
+        commit-message: "security: fix dependency vulnerabilities"
+        labels: |
+          security
+          urgent
+          dependencies
+          vulnerability
+        reviewers: |
+          # Add security team members here
+        draft: false
+
+  # Docker base image updates
+  update-docker-images:
+    name: Update Docker Base Images
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Check for newer base images
+      run: |
+        # Check for updates to .NET base image
+        CURRENT_DOTNET=$(grep "FROM mcr.microsoft.com/dotnet" Backend/Dockerfile | head -n1 | cut -d':' -f2 | cut -d' ' -f1)
+        echo "Current .NET version: $CURRENT_DOTNET"
+        
+        # Check for updates to Node.js base image
+        CURRENT_NODE=$(grep "FROM node:" Frontend/ecommerce-frontend/Dockerfile | head -n1 | cut -d':' -f2 | cut -d'-' -f1)
+        echo "Current Node.js version: $CURRENT_NODE"
+        
+        # Check for updates to Nginx base image
+        CURRENT_NGINX=$(grep "FROM nginx:" Frontend/ecommerce-frontend/Dockerfile | tail -n1 | cut -d':' -f2 | cut -d' ' -f1)
+        echo "Current Nginx version: $CURRENT_NGINX"
+        
+        # For now, we'll just log the versions
+        # In a real scenario, you'd want to check Docker Hub API for newer versions
+        # and update the Dockerfiles accordingly
+
+    - name: Update Docker base images (if needed)
+      run: |
+        # This is a placeholder for actual base image updates
+        # You would implement logic here to:
+        # 1. Check Docker Hub for newer versions
+        # 2. Update Dockerfile base image versions
+        # 3. Test that builds still work
+        # 4. Create PR with changes
+        echo "Docker base image check completed"
+
+  # Summary and notification
+  update-summary:
+    name: Update Summary
+    runs-on: ubuntu-latest
+    needs: [update-dotnet-dependencies, update-nodejs-dependencies, security-updates, update-docker-images]
+    if: always()
+    
+    steps:
+    - name: Generate Update Summary
+      run: |
+        echo "# 🔄 Dependency Update Summary" > update-summary.md
+        echo "" >> update-summary.md
+        echo "**Date:** $(date)" >> update-summary.md
+        echo "" >> update-summary.md
+        
+        echo "## Update Status" >> update-summary.md
+        echo "" >> update-summary.md
+        
+        if [ "${{ needs.update-dotnet-dependencies.result }}" == "success" ]; then
+          echo "✅ .NET Dependencies: Updated" >> update-summary.md
+        else
+          echo "❌ .NET Dependencies: Failed" >> update-summary.md
+        fi
+        
+        if [ "${{ needs.update-nodejs-dependencies.result }}" == "success" ]; then
+          echo "✅ Node.js Dependencies: Updated" >> update-summary.md
+        else
+          echo "❌ Node.js Dependencies: Failed" >> update-summary.md
+        fi
+        
+        if [ "${{ needs.security-updates.result }}" == "success" ]; then
+          echo "✅ Security Updates: Completed" >> update-summary.md
+        else
+          echo "❌ Security Updates: Issues Found" >> update-summary.md
+        fi
+        
+        if [ "${{ needs.update-docker-images.result }}" == "success" ]; then
+          echo "✅ Docker Images: Checked" >> update-summary.md
+        else
+          echo "❌ Docker Images: Failed" >> update-summary.md
+        fi
+        
+        echo "" >> update-summary.md
+        echo "## Next Steps" >> update-summary.md
+        echo "" >> update-summary.md
+        echo "1. Review and merge dependency update PRs" >> update-summary.md
+        echo "2. Run full test suite after merging" >> update-summary.md
+        echo "3. Monitor applications for any issues" >> update-summary.md
+        echo "4. Consider security updates as high priority" >> update-summary.md
+        
+        cat update-summary.md
+
+    - name: Upload Update Summary
+      uses: actions/upload-artifact@v3
+      with:
+        name: dependency-update-summary
+        path: update-summary.md
