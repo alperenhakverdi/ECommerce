@@ -25,7 +25,7 @@ import AdminStoresPage from './pages/AdminStoresPage';
 import AdminAnalyticsPage from './pages/AdminAnalyticsPage';
 import SavedCardsPage from './pages/SavedCardsPage';
 import StorePage from './pages/StorePage';
-import StoreDashboardPage from './pages/StoreDashboardPage';
+import StoreDashboardPageNew from './pages/StoreDashboardPageNew';
 import ProductFormPage from './pages/ProductFormPage';
 import NotificationsPage from './pages/NotificationsPage';
 import SecuritySettingsPage from './pages/SecuritySettingsPage';
@@ -65,11 +65,8 @@ function App() {
                   <Route path="/orders" element={<OrdersPage />} />
                   <Route path="/orders/:id" element={<OrderDetailsPage />} />
                   <Route path="/payment/confirmation" element={<PaymentConfirmationPage />} />
-                  <Route path="/store/dashboard" element={<StoreDashboardPage />} />
-                  <Route path="/store/products" element={<StoreDashboardPage />} />
+                  <Route path="/store/dashboard" element={<StoreDashboardPageNew />} />
                   <Route path="/store/products/new" element={<ProductFormPage />} />
-                  <Route path="/store/orders" element={<StoreDashboardPage />} />
-                  <Route path="/store/settings" element={<StoreDashboardPage />} />
                   <Route path="/store/:id" element={<StorePage />} />
                   <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
                   <Route path="/admin/orders" element={<AdminOrdersPage />} />

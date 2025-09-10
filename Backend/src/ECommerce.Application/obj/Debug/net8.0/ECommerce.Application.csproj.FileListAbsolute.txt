@@ -28,3 +28,4 @@
 /home/wsl-alpdev/ECommerce/Backend/src/ECommerce.Application/obj/Debug/net8.0/ECommerce.Application.pdb
 /home/wsl-alpdev/ECommerce/Backend/src/ECommerce.Application/obj/Debug/net8.0/ref/ECommerce.Application.dll
 /home/wsl-alpdev/ECommerce/Backend/src/ECommerce.Application/obj/Debug/net8.0/ECommerce.Application.csproj.CopyComplete
+/home/wsl-alpdev/ECommerce/Backend/src/ECommerce.Application/obj/Debug/net8.0/ECommerce.Application.sourcelink.json

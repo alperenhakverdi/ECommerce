@@ -80,8 +80,8 @@ public class AdminAuthorizationMiddleware
         // Paths that are admin-only for write operations (POST, PUT, DELETE)
         var adminWritePaths = new[]
         {
-            "/api/products",
             "/api/categories"
+            // Note: /api/products removed - authorization handled by controller attributes
         };
 
         // Check if it's a write operation to products or categories

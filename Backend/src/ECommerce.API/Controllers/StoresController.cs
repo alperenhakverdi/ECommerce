@@ -503,6 +503,79 @@ public class StoresController : ControllerBase
         }
     }
 
+    // POST: api/stores/{id}/products
+    [HttpPost("{id}/products")]
+    [Authorize(Roles = "StoreOwner,Admin")]
+    public async Task<ActionResult<ProductDto>> CreateStoreProduct(Guid id, [FromBody] CreateProductDto createProductDto)
+    {
+        try
+        {
+            var userId = GetCurrentUserId();
+            if (userId == Guid.Empty)
+                return Unauthorized("Invalid user token");
+
+            _logger.LogInformation("Creating product for store: {StoreId} by user: {UserId}", id, userId);
+            
+            // Verify user owns this store (unless admin)
+            if (!User.IsInRole(UserRoles.Admin))
+            {
+                var store = await _storeService.GetByIdAsync(id);
+                if (store == null)
+                    return NotFound("Store not found");
+                
+                if (store.OwnerId != userId)
+                    return Forbid("You don't have permission to create products for this store");
+            }
+
+            // Set store ID in the product DTO
+            createProductDto.StoreId = id;
+
+            var product = await _storeService.CreateProductAsync(id, createProductDto);
+            return CreatedAtAction(nameof(GetStore), new { id = product.Id }, product);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error creating product for store: {StoreId}", id);
+            return StatusCode(500, "Internal server error");
+        }
+    }
+
+    // GET: api/stores/{id}/orders
+    [HttpGet("{id}/orders")]
+    [Authorize(Roles = "StoreOwner,Admin")]
+    public async Task<ActionResult<IEnumerable<object>>> GetStoreOrders(Guid id, [FromQuery] int page = 1, [FromQuery] int pageSize = 50)
+    {
+        try
+        {
+            var userId = GetCurrentUserId();
+            if (userId == Guid.Empty)
+                return Unauthorized("Invalid user token");
+
+            _logger.LogInformation("Getting orders for store: {StoreId} by user: {UserId}", id, userId);
+
+            // Verify user owns this store (unless admin)
+            if (!User.IsInRole(UserRoles.Admin))
+            {
+                var store = await _storeService.GetByIdAsync(id);
+                if (store == null)
+                    return NotFound("Store not found");
+
+                if (store.OwnerId != userId)
+                    return Forbid("You don't have permission to view orders for this store");
+            }
+
+            // TODO: Implement GetStoreOrdersAsync in StoreService
+            // For now, return empty list as this endpoint was missing
+            var emptyOrders = new List<object>();
+            return Ok(emptyOrders);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting orders for store: {StoreId}", id);
+            return StatusCode(500, "Internal server error");
+        }
+    }
+
     private Guid GetCurrentUserId()
     {
         var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;

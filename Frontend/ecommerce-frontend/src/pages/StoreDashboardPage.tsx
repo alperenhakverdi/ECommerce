@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import {
   Box,
   Container,
@@ -57,6 +57,7 @@ const StoreDashboardPage: React.FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
   const toast = useToast();
   const { user, isLoading } = useAuth();
   const { isOpen, onOpen, onClose } = useDisclosure();
@@ -75,17 +76,30 @@ const StoreDashboardPage: React.FC = () => {
   const { isOpen: isOrderDetailsOpen, onOpen: onOrderDetailsOpen, onClose: onOrderDetailsClose } = useDisclosure();
   const { isOpen: isStoreEditOpen, onOpen: onStoreEditOpen, onClose: onStoreEditClose } = useDisclosure();
   
-  // Determine active tab based on URL
+  // Data cache for performance optimization
+  const dataCache = useRef({
+    stats: null as StoreStats | null,
+    products: null as Product[] | null,
+    orders: null as Order[] | null,
+    lastFetch: {
+      stats: 0,
+      products: 0,
+      orders: 0
+    }
+  });
+  
+  // Determine active tab based on URL params
   const getActiveTabIndex = () => {
-    switch (location.pathname) {
-      case '/store/products':
+    const tab = searchParams.get('tab');
+    switch (tab) {
+      case 'products':
         return 1; // Products tab
-      case '/store/orders':
+      case 'orders':
         return 2; // Orders tab
-      case '/store/settings':
+      case 'settings':
         return 3; // Settings tab
       default:
-        return 0; // Dashboard tab
+        return 0; // Statistics tab
     }
   };
   const [activeTabIndex, setActiveTabIndex] = useState(getActiveTabIndex());
@@ -93,17 +107,13 @@ const StoreDashboardPage: React.FC = () => {
   const bgColor = useColorModeValue('white', 'gray.800');
   const borderColor = useColorModeValue('gray.200', 'gray.600');
 
-  // Update active tab when location changes and redirect if no store
+  // Update active tab when URL params change - memoized to prevent unnecessary re-renders
   useEffect(() => {
-    // If user is trying to access products/orders without a store, redirect to dashboard
-    if ((location.pathname === '/store/products' || location.pathname === '/store/orders') && 
-        myStores.length === 0 && !loading) {
-      navigate('/store/dashboard');
-      return;
+    const newTabIndex = getActiveTabIndex();
+    if (newTabIndex !== activeTabIndex) {
+      setActiveTabIndex(newTabIndex);
     }
-    
-    setActiveTabIndex(getActiveTabIndex());
-  }, [location.pathname, myStores.length, loading, navigate]);
+  }, [searchParams, activeTabIndex]);
 
   useEffect(() => {
     // Don't redirect while authentication is loading
@@ -126,12 +136,35 @@ const StoreDashboardPage: React.FC = () => {
     }
   }, [selectedStore]);
 
-  // Refresh products when navigating to products tab
+  // Optimize loading: only refresh data if cache is expired when switching tabs
   useEffect(() => {
-    if (selectedStore && location.pathname === '/store/products') {
-      fetchStoreProducts();
+    if (!selectedStore) return;
+    
+    const currentTab = searchParams.get('tab');
+    const now = Date.now();
+    
+    // Only fetch if cache is expired for the current tab
+    switch (currentTab) {
+      case 'products':
+        const productsCacheAge = now - dataCache.current.lastFetch.products;
+        if (productsCacheAge >= 3 * 60 * 1000) { // 3 minutes
+          fetchStoreProducts();
+        }
+        break;
+      case 'orders':
+        const ordersCacheAge = now - dataCache.current.lastFetch.orders;
+        if (ordersCacheAge >= 3 * 60 * 1000) { // 3 minutes
+          fetchStoreOrders();
+        }
+        break;
+      case 'statistics':
+        const statsCacheAge = now - dataCache.current.lastFetch.stats;
+        if (statsCacheAge >= 5 * 60 * 1000) { // 5 minutes
+          fetchStoreStats();
+        }
+        break;
     }
-  }, [location.pathname, selectedStore]);
+  }, [searchParams, selectedStore]);
 
   const fetchMyStores = async () => {
     try {
@@ -163,12 +196,27 @@ const StoreDashboardPage: React.FC = () => {
     }
   };
 
-  const fetchStoreStats = async () => {
+  const fetchStoreStats = async (forceRefresh = false) => {
     if (!selectedStore) return;
+
+    // Check cache first (5 minutes cache)
+    const now = Date.now();
+    const cacheAge = now - dataCache.current.lastFetch.stats;
+    const isCacheValid = cacheAge < 5 * 60 * 1000; // 5 minutes
+
+    if (!forceRefresh && dataCache.current.stats && isCacheValid) {
+      setStoreStats(dataCache.current.stats);
+      return;
+    }
 
     try {
       setStatsLoading(true);
       const response = await storesApi.getStats(selectedStore.id);
+      
+      // Cache the data
+      dataCache.current.stats = response.data;
+      dataCache.current.lastFetch.stats = now;
+      
       setStoreStats(response.data);
     } catch (error: any) {
       console.error('Failed to load store stats:', error);
@@ -177,8 +225,18 @@ const StoreDashboardPage: React.FC = () => {
     }
   };
 
-  const fetchStoreProducts = async () => {
+  const fetchStoreProducts = async (forceRefresh = false) => {
     if (!selectedStore) return;
+
+    // Check cache first (3 minutes cache for products)
+    const now = Date.now();
+    const cacheAge = now - dataCache.current.lastFetch.products;
+    const isCacheValid = cacheAge < 3 * 60 * 1000; // 3 minutes
+
+    if (!forceRefresh && dataCache.current.products && isCacheValid) {
+      setStoreProducts(dataCache.current.products);
+      return;
+    }
 
     try {
       setProductsLoading(true);
@@ -231,6 +289,11 @@ const StoreDashboardPage: React.FC = () => {
       const newProducts = newProductsJson ? JSON.parse(newProductsJson) : [];
       
       const allProducts = [...mockProducts, ...newProducts];
+      
+      // Cache the data
+      dataCache.current.products = allProducts;
+      dataCache.current.lastFetch.products = now;
+      
       setStoreProducts(allProducts);
       
       // TODO: Replace with real API call
@@ -243,13 +306,33 @@ const StoreDashboardPage: React.FC = () => {
     }
   };
 
-  const fetchStoreOrders = async () => {
+  const fetchStoreOrders = async (forceRefresh = false) => {
     if (!selectedStore) return;
+
+    // Check cache first (3 minutes cache for orders)
+    const now = Date.now();
+    const cacheAge = now - dataCache.current.lastFetch.orders;
+    const isCacheValid = cacheAge < 3 * 60 * 1000; // 3 minutes
+
+    if (!forceRefresh && dataCache.current.orders && isCacheValid) {
+      setStoreOrders(dataCache.current.orders);
+      return;
+    }
 
     try {
       setOrdersLoading(true);
       
-      // Mock orders for demo purposes - in real app would call: storesApi.getOrders(selectedStore.id)
+      // Fetch store orders from API
+      const response = await storesApi.getOrders(selectedStore.id, 1, 50);
+      const storeOrders = response.data || [];
+      
+      // Cache the data
+      dataCache.current.orders = storeOrders;
+      dataCache.current.lastFetch.orders = now;
+      
+      setStoreOrders(storeOrders);
+      
+      // TODO: Remove mock data below - kept for now as fallback
       const mockOrders: Order[] = [
         {
           id: 'order-1',
@@ -370,7 +453,10 @@ const StoreDashboardPage: React.FC = () => {
         }
       ];
       
-      setStoreOrders(mockOrders);
+      // Use mock data as fallback if API returns empty
+      if (storeOrders.length === 0) {
+        setStoreOrders(mockOrders);
+      }
     } catch (error: any) {
       console.error('Failed to load store orders:', error);
     } finally {
@@ -428,21 +514,12 @@ const StoreDashboardPage: React.FC = () => {
   const handleTabChange = (index: number) => {
     setActiveTabIndex(index);
     
-    // Update URL when tab changes - immediate navigation
-    switch (index) {
-      case 1:
-        navigate('/store/products');
-        break;
-      case 2:
-        navigate('/store/orders');
-        break;
-      case 3:
-        navigate('/store/settings');
-        break;
-      default:
-        navigate('/store/dashboard');
-        break;
-    }
+    // Update URL params when tab changes - shallow routing
+    const tabNames = ['statistics', 'products', 'orders', 'settings'];
+    const tabName = tabNames[index] || 'statistics';
+    
+    // Use replace: true for shallow routing (no page reload)
+    setSearchParams({ tab: tabName }, { replace: true });
   };
 
   // Show loading while authentication is being checked or data is loading
@@ -549,7 +626,7 @@ const StoreDashboardPage: React.FC = () => {
             variant="enclosed" 
             index={activeTabIndex} 
             onChange={handleTabChange}
-            isLazy
+            isLazy={false}
             lazyBehavior="keepMounted"
           >
             <TabList>

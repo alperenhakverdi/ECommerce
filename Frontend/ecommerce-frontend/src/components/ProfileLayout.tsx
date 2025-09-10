@@ -45,42 +45,58 @@ export const ProfileLayout: React.FC<ProfileLayoutProps> = ({ children }) => {
   const activeColor = useColorModeValue('blue.50', 'blue.900');
   const activeBorderColor = useColorModeValue('blue.500', 'blue.300');
 
-  // Common navigation items for all users
+  // Common navigation items for all roles
   const commonNavItems: NavigationItem[] = [
     { id: 'overview', label: 'Profile Overview', icon: '👤', path: '/profile' },
     { id: 'security', label: 'Security Settings', icon: '🔒', path: '/profile/security' },
-    { id: 'orders', label: 'Order History', icon: '📦', path: '/orders' },
-    { id: 'payments', label: 'Payment Methods', icon: '💳', path: '/saved-cards' },
     { id: 'notifications', label: 'Notifications', icon: '🔔', path: '/profile/notifications' },
   ];
 
-  // Role-specific navigation items
-  const roleSpecificNavItems: NavigationItem[] = [
-    // Customer specific
+  // Customer-specific navigation items
+  const customerNavItems: NavigationItem[] = [
+    { id: 'orders', label: 'Order History', icon: '📦', path: '/orders', roles: ['Customer'] },
+    { id: 'payments', label: 'Payment Methods', icon: '💳', path: '/saved-cards', roles: ['Customer'] },
     { id: 'wishlist', label: 'Wishlist', icon: '❤️', path: '/profile/wishlist', roles: ['Customer'] },
     { id: 'addresses', label: 'Delivery Addresses', icon: '📍', path: '/profile/addresses', roles: ['Customer'] },
     { id: 'reviews', label: 'My Reviews', icon: '⭐', path: '/profile/reviews', roles: ['Customer'] },
-    
-    // Store Owner specific
+  ];
+
+  // Store Owner-specific navigation items
+  const storeOwnerNavItems: NavigationItem[] = [
     { id: 'store-dashboard', label: 'Store Dashboard', icon: '🏪', path: '/store/dashboard', roles: ['StoreOwner'] },
     { id: 'store-analytics', label: 'Store Analytics', icon: '📊', path: '/store/analytics', roles: ['StoreOwner'] },
-    { id: 'store-orders', label: 'Store Orders', icon: '📋', path: '/store/orders', roles: ['StoreOwner'] },
-    
-    // Admin specific
+    { id: 'store-settings', label: 'Store Settings', icon: '⚙️', path: '/store/dashboard?tab=settings', roles: ['StoreOwner'] },
+  ];
+
+  // Admin-specific navigation items
+  const adminNavItems: NavigationItem[] = [
     { id: 'admin-dashboard', label: 'Admin Dashboard', icon: '👨‍💼', path: '/admin/dashboard', roles: ['Admin'] },
     { id: 'admin-analytics', label: 'System Analytics', icon: '📈', path: '/admin/analytics/overview', roles: ['Admin'] },
     { id: 'user-management', label: 'User Management', icon: '👥', path: '/admin/roles', roles: ['Admin'] },
+    { id: 'store-approvals', label: 'Store Approvals', icon: '✅', path: '/admin/stores', roles: ['Admin'] },
   ];
 
   // Filter navigation items based on user roles
   const getFilteredNavItems = () => {
-    if (!user) return commonNavItems;
+    if (!user || !user.roles) return commonNavItems;
     
-    const filteredRoleItems = roleSpecificNavItems.filter(item => 
-      !item.roles || item.roles.some(role => user.roles.includes(role))
-    );
+    // Start with common items (always visible)
+    const allItems = [...commonNavItems];
     
-    return [...commonNavItems, ...filteredRoleItems];
+    // Add role-specific items based on user roles
+    if (user.roles.includes('Customer')) {
+      allItems.push(...customerNavItems);
+    }
+    
+    if (user.roles.includes('StoreOwner')) {
+      allItems.push(...storeOwnerNavItems);
+    }
+    
+    if (user.roles.includes('Admin')) {
+      allItems.push(...adminNavItems);
+    }
+    
+    return allItems;
   };
 
   const navItems = getFilteredNavItems();

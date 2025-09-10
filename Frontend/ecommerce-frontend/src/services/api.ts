@@ -243,6 +243,14 @@ export const storesApi = {
   getProducts: (id: string, page?: number, pageSize?: number) => 
     api.get<Product[]>(`/stores/${id}/products${page ? `?page=${page}&pageSize=${pageSize || 20}` : ''}`),
   
+  // Create product for store (store owner only)
+  createProduct: (storeId: string, product: any) => 
+    api.post<Product>(`/stores/${storeId}/products`, product),
+
+  // Store orders (store owner only)
+  getOrders: (id: string, page?: number, pageSize?: number) => 
+    api.get<Order[]>(`/stores/${id}/orders${page ? `?page=${page}&pageSize=${pageSize || 20}` : ''}`),
+  
   // Store application (for becoming a store owner)
   applyToBecomeStore: (application: any) => 
     api.post('/stores/apply', application),

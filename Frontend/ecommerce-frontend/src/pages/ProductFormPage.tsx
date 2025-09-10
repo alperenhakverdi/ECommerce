@@ -26,6 +26,8 @@ import {
 import { FiArrowLeft, FiUpload, FiSave } from 'react-icons/fi';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
+import { productsApi, storesApi } from '../services/api';
+import { generateProductId } from '../utils/storeUtils';
 
 interface ProductFormData {
   name: string;
@@ -53,16 +55,50 @@ const ProductFormPage: React.FC = () => {
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [imagePreview, setImagePreview] = useState<string>('');
+  const [userStores, setUserStores] = useState<any[]>([]);
+  const [selectedStoreId, setSelectedStoreId] = useState<string>('');
+  const [categories, setCategories] = useState<any[]>([]);
 
   const bgColor = useColorModeValue('white', 'gray.800');
   const borderColor = useColorModeValue('gray.200', 'gray.600');
 
-  // Redirect if not authenticated or not a store owner
+  const loadUserStores = async () => {
+    try {
+      const response = await storesApi.getMyStores();
+      setUserStores(response.data);
+      if (response.data.length > 0) {
+        setSelectedStoreId(response.data[0].id);
+      }
+    } catch (error) {
+      console.error('Failed to load user stores:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load your stores.',
+        status: 'error',
+        duration: 4000,
+      });
+    }
+  };
+
+  const loadCategories = async () => {
+    try {
+      const response = await fetch('http://localhost:5133/api/categories');
+      const data = await response.json();
+      setCategories(data);
+    } catch (error) {
+      console.error('Failed to load categories:', error);
+    }
+  };
+
+  // Load user stores and redirect if not authenticated
   React.useEffect(() => {
     if (!isLoading && (!user || !user.roles?.includes('StoreOwner'))) {
       navigate('/');
+    } else if (user && user.roles?.includes('StoreOwner')) {
+      loadUserStores();
+      loadCategories();
     }
-  }, [user, isLoading, navigate]);
+  }, [user, isLoading, navigate, loadUserStores, loadCategories]);
 
   const handleInputChange = (field: keyof ProductFormData, value: any) => {
     setFormData(prev => ({
@@ -99,38 +135,65 @@ const ProductFormPage: React.FC = () => {
       return;
     }
 
+    if (!selectedStoreId) {
+      toast({
+        title: 'Error',
+        description: 'Please select a store for this product.',
+        status: 'error',
+        duration: 4000,
+      });
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
-      // TODO: Implement actual API call
-      // await productsApi.create(formData);
+      // Find the selected store
+      const selectedStore = userStores.find(store => store.id === selectedStoreId);
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Generate proper product ID
+      const productId = generateProductId(formData.name, selectedStoreId);
 
-      // Create mock product object
-      const newProduct = {
-        id: `user-product-${Date.now()}`,
-        name: formData.name,
-        description: formData.description,
-        price: formData.price,
+      // Find selected category
+      const selectedCategory = categories.find(cat => cat.id === formData.category);
+      
+      // Prepare product data for API (CreateProductDto format)
+      const productData = {
+        name: formData.name.trim(),
+        description: formData.description.trim(),
+        basePrice: formData.price,  // Backend expects basePrice
+        price: formData.price,      // Backward compatibility
         stock: formData.stock,
-        imageUrl: formData.images[0] || 'https://via.placeholder.com/300x300?text=Product',
-        categoryId: formData.category,
-        categoryName: formData.category,
-        isActive: true,
-        storeId: 'current-store-id', // This should be dynamic
-        storeName: 'Current Store',
-        averageRating: 0,
-        totalReviews: 0,
-        isNew: true,
-        createdAt: new Date().toISOString()
+        imageUrl: 'https://via.placeholder.com/300x300?text=Product',
+        categoryId: formData.category,  // This should be a valid GUID string
+        // storeId will be set by the backend from URL parameter
+        hasVariants: false,
+        weight: 0,
+        tags: null,
+        variants: []
       };
 
-      // Add to localStorage
-      const existingProducts = JSON.parse(localStorage.getItem('newProducts') || '[]');
-      const updatedProducts = [...existingProducts, newProduct];
-      localStorage.setItem('newProducts', JSON.stringify(updatedProducts));
+      // Create product via backend API
+      console.log('Creating product for store:', selectedStoreId, 'with data:', productData);
+      
+      try {
+        // Use store-specific API (preferred)
+        console.log('Trying storesApi.createProduct...');
+        await storesApi.createProduct(selectedStoreId, productData);
+        console.log('✅ storesApi.createProduct succeeded');
+      } catch (firstError: any) {
+        console.log('❌ storesApi.createProduct failed:', firstError?.response?.status, firstError?.response?.data);
+        
+        try {
+          // Fallback to general products API  
+          console.log('Trying productsApi.create...');
+          await productsApi.create(productData);
+          console.log('✅ productsApi.create succeeded');
+        } catch (secondError: any) {
+          console.log('❌ Both API endpoints failed:', secondError?.response?.status, secondError?.response?.data);
+          throw secondError; // Re-throw the last error
+        }
+      }
 
       toast({
         title: 'Success!',
@@ -139,12 +202,14 @@ const ProductFormPage: React.FC = () => {
         duration: 4000,
       });
 
-      // Navigate back to products tab
-      navigate('/store/products');
+      // Navigate back to store dashboard
+      navigate('/store/dashboard?tab=products');
     } catch (error: any) {
+      console.error('Product creation failed:', error);
+      const errorMessage = error?.response?.data?.message || 'Failed to create product. Please try again.';
       toast({
         title: 'Error',
-        description: 'Failed to create product. Please try again.',
+        description: errorMessage,
         status: 'error',
         duration: 4000,
       });
@@ -169,9 +234,9 @@ const ProductFormPage: React.FC = () => {
           <Button
             leftIcon={<FiArrowLeft />}
             variant="ghost"
-            onClick={() => navigate('/store/products')}
+            onClick={() => navigate('/store/dashboard?tab=products')}
           >
-            Back to Products
+            Back to Store Dashboard
           </Button>
         </HStack>
 
@@ -240,12 +305,27 @@ const ProductFormPage: React.FC = () => {
                   onChange={(e) => handleInputChange('category', e.target.value)}
                   placeholder="Select category"
                 >
-                  <option value="electronics">Electronics</option>
-                  <option value="clothing">Clothing</option>
-                  <option value="books">Books</option>
-                  <option value="home">Home & Garden</option>
-                  <option value="sports">Sports</option>
-                  <option value="beauty">Beauty</option>
+                  {categories.map((category) => (
+                    <option key={category.id} value={category.id}>
+                      {category.name}
+                    </option>
+                  ))}
+                </Select>
+              </FormControl>
+
+              {/* Store Selection */}
+              <FormControl isRequired>
+                <FormLabel>Store</FormLabel>
+                <Select
+                  value={selectedStoreId}
+                  onChange={(e) => setSelectedStoreId(e.target.value)}
+                  placeholder="Select store"
+                >
+                  {userStores.map((store) => (
+                    <option key={store.id} value={store.id}>
+                      {store.name}
+                    </option>
+                  ))}
                 </Select>
               </FormControl>
 
@@ -289,7 +369,7 @@ const ProductFormPage: React.FC = () => {
               <HStack justify="flex-end" pt={4}>
                 <Button
                   variant="outline"
-                  onClick={() => navigate('/store/products')}
+                  onClick={() => navigate('/store/dashboard?tab=products')}
                 >
                   Cancel
                 </Button>

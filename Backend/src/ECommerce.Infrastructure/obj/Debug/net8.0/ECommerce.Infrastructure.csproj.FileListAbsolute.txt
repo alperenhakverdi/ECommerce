@@ -25,3 +25,4 @@
 //wsl.localhost/Ubuntu/home/wsl-alpdev/ECommerce/Backend/src/ECommerce.Infrastructure/obj/Debug/net8.0/ECommerce.Infrastructure.AssemblyInfo.cs
 //wsl.localhost/Ubuntu/home/wsl-alpdev/ECommerce/Backend/src/ECommerce.Infrastructure/obj/Debug/net8.0/ECommerce.Infrastructure.csproj.CoreCompileInputs.cache
 /home/wsl-alpdev/ECommerce/Backend/src/ECommerce.Infrastructure/obj/Debug/net8.0/ECommerce.Infrastructure.csproj.CopyComplete
+/home/wsl-alpdev/ECommerce/Backend/src/ECommerce.Infrastructure/obj/Debug/net8.0/ECommerce.Infrastructure.sourcelink.json

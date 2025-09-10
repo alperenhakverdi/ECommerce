@@ -456,6 +456,51 @@ public class StoreService : IStoreService
         };
     }
 
+    public async Task<ProductDto> CreateProductAsync(Guid storeId, CreateProductDto createProductDto)
+    {
+        _logger.LogInformation("Creating product for store: {StoreId}", storeId);
+        
+        // Verify store exists and is active
+        var store = await _unitOfWork.Stores.GetByIdAsync(storeId);
+        if (store == null)
+            throw new ArgumentException($"Store with ID {storeId} not found");
+        
+        if (!store.IsActive || !store.IsApproved)
+            throw new InvalidOperationException($"Store {storeId} is not active or approved");
+
+        // Create new product
+        var product = new Product
+        {
+            Id = Guid.NewGuid(),
+            Name = createProductDto.Name,
+            Description = createProductDto.Description,
+            Price = createProductDto.Price,
+            BasePrice = createProductDto.Price, // Use same price as base price
+            Stock = createProductDto.Stock,
+            ImageUrl = createProductDto.ImageUrl ?? string.Empty,
+            CategoryId = createProductDto.CategoryId,
+            StoreId = storeId,
+            IsActive = true,
+            HasVariants = false,
+            Weight = 0,
+            Tags = null,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
+
+        await _unitOfWork.Products.AddAsync(product);
+        
+        // Update store product count
+        store.TotalProducts++;
+        // Store will be updated through context tracking
+        
+        await _unitOfWork.SaveChangesAsync();
+
+        _logger.LogInformation("Product created successfully: {ProductId} for store: {StoreId}", product.Id, storeId);
+        
+        return MapProductToDto(product);
+    }
+
     private static StoreListDto MapStoreToListDto(Store store)
     {
         return new StoreListDto

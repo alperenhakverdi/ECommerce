@@ -37,4 +37,5 @@ public interface IStoreService
     Task<int> GetProductCountAsync(Guid storeId);
     Task<bool> HasActiveProductsAsync(Guid storeId);
     Task<IEnumerable<ProductDto>> GetProductsAsync(Guid storeId, int page = 1, int pageSize = 50);
+    Task<ProductDto> CreateProductAsync(Guid storeId, CreateProductDto createProductDto);
 }
