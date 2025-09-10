@@ -187,6 +187,7 @@
     "total": "Total",
     "items": "Items",
     "viewDetails": "View Details",
+    "trackShipment": "Track Shipment",
     "cancelOrder": "Cancel Order",
     "cancelConfirm": "Are you sure you want to cancel this order? This action cannot be undone.",
     "keepOrder": "Keep Order",

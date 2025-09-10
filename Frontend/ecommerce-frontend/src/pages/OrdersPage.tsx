@@ -267,13 +267,15 @@ const OrdersPage: React.FC = () => {
                         >
                           {t('orders.viewDetails')}
                         </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => navigate(`/orders/${order.id}/track`)}
-                        >
-                          {t('orders.trackOrder')}
-                        </Button>
+                        {(order.status >= OrderStatus.Shipped) && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => navigate(`/orders/${order.id}?tab=tracking`)}
+                          >
+                            {t('orders.trackShipment')}
+                          </Button>
+                        )}
                         {(order.status === OrderStatus.Pending ||
                           order.status === OrderStatus.Paid) && (
                           <Button 

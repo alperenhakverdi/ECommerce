@@ -25,7 +25,7 @@ import {
   AccordionIcon,
   useColorModeValue,
 } from '@chakra-ui/react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { FiExternalLink } from 'react-icons/fi';
 import { OrderStatusTimeline } from '../components/Order';
 import { Order, OrderStatus, OrderWithStoreGroups } from '../types';
@@ -108,6 +108,8 @@ const OrderDetailsPage: React.FC = () => {
   const [orderWithStores, setOrderWithStores] = useState<OrderWithStoreGroups | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [searchParams] = useSearchParams();
+  const trackingRef = React.useRef<HTMLDivElement | null>(null);
 
   const bgColor = useColorModeValue('white', 'gray.800');
   const borderColor = useColorModeValue('gray.200', 'gray.600');
@@ -143,6 +145,14 @@ const OrderDetailsPage: React.FC = () => {
 
     fetchOrder();
   }, [id]);
+
+  // If tab=tracking is present, scroll into the timeline section
+  useEffect(() => {
+    const tab = searchParams.get('tab');
+    if (tab === 'tracking' && trackingRef.current) {
+      trackingRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, [searchParams]);
 
   if (loading) {
     return (
@@ -202,12 +212,14 @@ const OrderDetailsPage: React.FC = () => {
         </Box>
 
         {/* Order Status Timeline */}
-        <OrderStatusTimeline
-          currentStatus={order.status}
-          createdAt={order.createdAt}
-          shippedDate={order.shippedDate}
-          deliveredDate={order.deliveredDate}
-        />
+        <Box ref={trackingRef} id="tracking-section">
+          <OrderStatusTimeline
+            currentStatus={order.status}
+            createdAt={order.createdAt}
+            shippedDate={order.shippedDate}
+            deliveredDate={order.deliveredDate}
+          />
+        </Box>
 
         <Grid templateColumns={{ base: '1fr', lg: '2fr 1fr' }} gap={8}>
           {/* Order Items by Store */}
