@@ -448,53 +448,66 @@ const Navbar: React.FC = () => {
 
             {/* Wishlist - Only for authenticated customers */}
             {!authLoading && isAuthenticated && !isStoreOwner && !isAdmin && (
-              <IconButton
-                aria-label="Wishlist"
-                icon={<FiHeart />}
-                variant="ghost"
-                onClick={() => navigate('/wishlist')}
-                position="relative"
-                size="lg"
-                display={{ base: 'none', md: 'flex' }}
-              >
+              <Box position="relative" display={{ base: 'none', md: 'flex' }}>
+                <IconButton
+                  aria-label={`Wishlist (${wishlistCount || 0})`}
+                  icon={<FiHeart />}
+                  variant="ghost"
+                  onClick={() => navigate('/wishlist')}
+                  size="lg"
+                />
                 {wishlistCount > 0 && (
                   <Badge
-                    colorScheme="pink"
                     position="absolute"
                     top="-1"
                     right="-1"
-                    fontSize="xs"
+                    bg="pink.500"
+                    color="white"
                     borderRadius="full"
+                    fontSize="xs"
+                    minW="18px"
+                    h="18px"
+                    display="flex"
+                    alignItems="center"
+                    justifyContent="center"
+                    boxShadow="0 0 0 2px var(--chakra-colors-white)"
                   >
-                    {wishlistCount}
+                    {wishlistCount > 99 ? '99+' : wishlistCount}
                   </Badge>
                 )}
-              </IconButton>
+              </Box>
             )}
 
             {/* Cart - Only for customers */}
             {!authLoading && !isStoreOwner && !isAdmin && (
-              <IconButton
-                aria-label={t('nav.cart')}
-                icon={<FiShoppingCart />}
-                variant="ghost"
-                onClick={() => navigate('/cart')}
-                position="relative"
-                size="lg"
-              >
+              <Box position="relative">
+                <IconButton
+                  aria-label={`${t('nav.cart')} (${totalItems})`}
+                  icon={<FiShoppingCart />}
+                  variant="ghost"
+                  onClick={() => navigate('/cart')}
+                  size="lg"
+                />
                 {totalItems > 0 && (
                   <Badge
-                    colorScheme="blue"
                     position="absolute"
                     top="-1"
                     right="-1"
-                    fontSize="xs"
+                    bg="red.500"
+                    color="white"
                     borderRadius="full"
+                    fontSize="xs"
+                    minW="18px"
+                    h="18px"
+                    display="flex"
+                    alignItems="center"
+                    justifyContent="center"
+                    boxShadow="0 0 0 2px var(--chakra-colors-white)"
                   >
-                    {totalItems}
+                    {totalItems > 99 ? '99+' : totalItems}
                   </Badge>
                 )}
-              </IconButton>
+              </Box>
             )}
 
             {/* User Menu */}

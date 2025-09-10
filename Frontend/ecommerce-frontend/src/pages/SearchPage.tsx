@@ -27,7 +27,7 @@ import {
   Category,
   Store,
 } from '../types';
-import { productsApi } from '../services/api';
+import { productsApi, categoriesApi } from '../services/api';
 import SearchBar from '../components/Search/SearchBar';
 import SearchFilters from '../components/Search/SearchFilters';
 import SearchResults from '../components/Search/SearchResults';
@@ -82,15 +82,16 @@ const SearchPage: React.FC = () => {
       setAvailableCategories(response.data.categories);
       setAvailableStores(response.data.availableStores);
       setPriceRange(response.data.priceRange);
-    } catch (error) {
-      console.error('Failed to load filter metadata:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to load search filters.',
-        status: 'error',
-        duration: 3000,
-        isClosable: true,
-      });
+    } catch (error: any) {
+      // Fallback when backend does not support /products/search/filters
+      try {
+        const cats = await categoriesApi.getAll();
+        setAvailableCategories(cats.data || []);
+      } catch {
+        setAvailableCategories([]);
+      }
+      setAvailableStores([]);
+      setPriceRange({ min: 0, max: 999999 });
     }
   };
 
@@ -230,6 +231,9 @@ const SearchPage: React.FC = () => {
                 onLoadMore={handleLoadMore}
                 isLoading={isLoading}
                 isLoadingMore={isLoadingMore}
+                availableCategories={availableCategories}
+                availableStores={availableStores}
+                priceRange={priceRange}
               />
             </VStack>
           </GridItem>

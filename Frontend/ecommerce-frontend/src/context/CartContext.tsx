@@ -49,6 +49,36 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     error: null,
   });
 
+  // Guest cart helpers (localStorage)
+  const GUEST_CART_KEY = 'guest_cart';
+
+  type GuestCart = { items: Array<{ productId: string; quantity: number }> };
+
+  const getGuestCart = (): GuestCart => {
+    try {
+      const raw = localStorage.getItem(GUEST_CART_KEY);
+      if (!raw) return { items: [] };
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed?.items)) return parsed as GuestCart;
+      return { items: [] };
+    } catch {
+      return { items: [] };
+    }
+  };
+
+  const saveGuestCart = (cart: GuestCart) => {
+    localStorage.setItem(GUEST_CART_KEY, JSON.stringify(cart));
+  };
+
+  const clearGuestCart = () => {
+    localStorage.removeItem(GUEST_CART_KEY);
+  };
+
+  const getGuestTotalItems = (): number => {
+    const gc = getGuestCart();
+    return gc.items.reduce((sum, it) => sum + (it.quantity || 0), 0);
+  };
+
   // Get authenticated user ID or return null for guest users
   const getUserId = () => {
     return isAuthenticated && user ? user.id : null;
@@ -57,16 +87,16 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const loadCart = async () => {
     const userId = getUserId();
     if (!userId) {
-      // Guest user - set empty cart
-      dispatch({ 
-        type: 'CART_LOADED', 
-        payload: { 
-          id: '', 
-          userId: '', 
-          items: [], 
-          totalAmount: 0, 
-          totalItems: 0 
-        } 
+      // Guest user - reflect guest cart total only
+      dispatch({
+        type: 'CART_LOADED',
+        payload: {
+          id: '',
+          userId: '',
+          items: [],
+          totalAmount: 0,
+          totalItems: getGuestTotalItems(),
+        },
       });
       return;
     }
@@ -83,7 +113,25 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const addToCart = async (item: AddToCartRequest) => {
     const userId = getUserId();
     if (!userId) {
-      dispatch({ type: 'ERROR', payload: 'Please login to add items to cart' });
+      // Guest mode: store items locally and update count
+      const gc = getGuestCart();
+      const idx = gc.items.findIndex(i => i.productId === item.productId);
+      if (idx >= 0) {
+        gc.items[idx].quantity += item.quantity;
+      } else {
+        gc.items.push({ productId: item.productId, quantity: item.quantity });
+      }
+      saveGuestCart(gc);
+      dispatch({
+        type: 'CART_LOADED',
+        payload: {
+          id: '',
+          userId: '',
+          items: [],
+          totalAmount: 0,
+          totalItems: getGuestTotalItems(),
+        },
+      });
       return;
     }
 
@@ -99,7 +147,24 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const updateCartItem = async (cartItemId: string, quantity: number) => {
     const userId = getUserId();
     if (!userId) {
-      dispatch({ type: 'ERROR', payload: 'Please login to update cart items' });
+      // Treat cartItemId as productId in guest cart
+      const gc = getGuestCart();
+      const idx = gc.items.findIndex(i => i.productId === cartItemId);
+      if (idx >= 0) {
+        if (quantity <= 0) gc.items.splice(idx, 1);
+        else gc.items[idx].quantity = quantity;
+        saveGuestCart(gc);
+      }
+      dispatch({
+        type: 'CART_LOADED',
+        payload: {
+          id: '',
+          userId: '',
+          items: [],
+          totalAmount: 0,
+          totalItems: getGuestTotalItems(),
+        },
+      });
       return;
     }
 
@@ -119,7 +184,19 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const removeFromCart = async (cartItemId: string) => {
     const userId = getUserId();
     if (!userId) {
-      dispatch({ type: 'ERROR', payload: 'Please login to remove cart items' });
+      const gc = getGuestCart();
+      const next = { items: gc.items.filter(i => i.productId === cartItemId ? false : true) } as GuestCart;
+      saveGuestCart(next);
+      dispatch({
+        type: 'CART_LOADED',
+        payload: {
+          id: '',
+          userId: '',
+          items: [],
+          totalAmount: 0,
+          totalItems: getGuestTotalItems(),
+        },
+      });
       return;
     }
 
@@ -135,7 +212,17 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const clearCart = async () => {
     const userId = getUserId();
     if (!userId) {
-      dispatch({ type: 'ERROR', payload: 'Please login to clear cart' });
+      clearGuestCart();
+      dispatch({
+        type: 'CART_LOADED',
+        payload: {
+          id: '',
+          userId: '',
+          items: [],
+          totalAmount: 0,
+          totalItems: 0,
+        },
+      });
       return;
     }
 
@@ -149,9 +236,29 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   useEffect(() => {
-    if (!authLoading) {
-      loadCart();
-    }
+    const mergeGuestCartIfNeeded = async () => {
+      if (!authLoading && isAuthenticated && user) {
+        const gc = getGuestCart();
+        if (gc.items.length > 0) {
+          try {
+            dispatch({ type: 'LOADING' });
+            for (const it of gc.items) {
+              await cartApi.addItem(user.id, { productId: it.productId, quantity: it.quantity });
+            }
+            clearGuestCart();
+          } catch (e) {
+            // Ignore merge failures silently to not block UI
+          }
+        }
+        await loadCart();
+      }
+      if (!authLoading && !isAuthenticated) {
+        // Reflect guest totals when logged out
+        await loadCart();
+      }
+    };
+
+    mergeGuestCartIfNeeded();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, authLoading]);
 

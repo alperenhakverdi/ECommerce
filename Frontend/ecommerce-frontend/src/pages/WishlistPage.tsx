@@ -234,14 +234,16 @@ const WishlistPage: React.FC = () => {
                         />
                         
                         {/* Availability Badge */}
-                        <Badge
-                          position="absolute"
-                          top={2}
-                          right={2}
-                          colorScheme={item.isAvailable ? 'green' : 'red'}
-                        >
-                          {item.isAvailable ? 'Available' : 'Out of Stock'}
-                        </Badge>
+                        {!item.isAvailable && (
+                          <Badge
+                            position="absolute"
+                            top={2}
+                            right={2}
+                            colorScheme='red'
+                          >
+                            {t('productCard.outOfStockBadge') || 'Out of Stock'}
+                          </Badge>
+                        )}
                       </Box>
 
                       {/* Product Info */}
@@ -306,7 +308,7 @@ const WishlistPage: React.FC = () => {
                           loadingText="Adding..."
                           isDisabled={!item.isAvailable}
                         >
-                          {item.isAvailable ? 'Add to Cart' : 'Out of Stock'}
+                          {item.isAvailable ? t('productCard.addToCart') : (t('productCard.outOfStockBadge') || 'Out of Stock')}
                         </Button>
                         
                         <Button

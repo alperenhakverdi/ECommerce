@@ -16,6 +16,7 @@ import { keyframes } from '@emotion/react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { FiHeart, FiShoppingCart, FiEye } from 'react-icons/fi';
+import WishlistToggle from '../common/WishlistToggle';
 import { Product } from '../../types';
 import { useCart } from '../../context/CartContext';
 import { useWishlist } from '../../contexts/WishlistContext';
@@ -270,36 +271,14 @@ const EnhancedProductCard: React.FC<ProductCardProps> = ({ product, onClick }) =
       </VStack>
 
       {/* Wishlist Button - Top Right */}
-      <IconButton
-        position="absolute"
-        top={3}
-        right={3}
-        aria-label={isProductInWishlist ? "Remove from wishlist" : "Add to wishlist"}
-        icon={<FiHeart />}
-        size="sm"
-        variant="ghost"
-        color={isProductInWishlist ? "red.500" : "gray.600"}
-        bg={isProductInWishlist ? "red.50" : "whiteAlpha.800"}
-        backdropFilter="blur(8px)"
-        border="1px solid"
-        borderColor={isProductInWishlist ? "red.200" : "whiteAlpha.300"}
-        _hover={{
-          bg: "red.50",
-          color: "red.500",
-          transform: "scale(1.15)",
-          boxShadow: "0 4px 12px rgba(239, 68, 68, 0.3)",
-          borderColor: "red.300"
-        }}
-        _active={{
-          transform: "scale(0.95)",
-          bg: "red.100"
-        }}
-        onClick={handleWishlistToggle}
+      <WishlistToggle
+        isActive={isProductInWishlist}
         isLoading={wishlistLoading}
-        zIndex={3}
-        borderRadius="full"
-        boxShadow="0 2px 8px rgba(0,0,0,0.15)"
-        transition="all 0.2s ease"
+        onToggle={handleWishlistToggle}
+        ariaLabelAdd="Add to wishlist"
+        ariaLabelRemove="Remove from wishlist"
+        position={{ top: 3, right: 3 }}
+        size="sm"
       />
 
       <VStack spacing={0} align="stretch" h="full">

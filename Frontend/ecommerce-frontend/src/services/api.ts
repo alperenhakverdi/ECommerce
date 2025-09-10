@@ -298,10 +298,10 @@ export const wishlistApi = {
   addItem: (request: AddToWishlistRequest) => api.post<Wishlist>('/wishlist/items', request),
   
   // Remove product from wishlist
-  removeItem: (productId: string) => api.delete(`/wishlist/items/${productId}`),
+  removeItem: (productId: string) => api.delete(`/wishlist/${productId}`),
   
   // Check if product is in wishlist
-  isInWishlist: (productId: string) => api.get<{ isInWishlist: boolean }>(`/wishlist/check/${productId}`),
+  isInWishlist: (productId: string) => api.get<{ isInWishlist: boolean }>(`/wishlist/contains/${productId}`),
   
   // Clear entire wishlist
   clear: () => api.delete('/wishlist'),

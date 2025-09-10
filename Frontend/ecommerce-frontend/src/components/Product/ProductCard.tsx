@@ -15,6 +15,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { FiHeart } from 'react-icons/fi';
+import WishlistToggle from '../common/WishlistToggle';
 import { Product } from '../../types';
 import { useCart } from '../../context/CartContext';
 import { useWishlist } from '../../contexts/WishlistContext';
@@ -159,24 +160,14 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick }) => {
       )}
 
       {isAuthenticated && (
-        <IconButton
-          position="absolute"
-          top={2}
-          left={2}
-          aria-label={isProductInWishlist ? "Remove from wishlist" : "Add to wishlist"}
-          icon={<FiHeart />}
-          size="sm"
-          variant="ghost"
-          colorScheme={isProductInWishlist ? "red" : "gray"}
-          color={isProductInWishlist ? "red.500" : "gray.500"}
-          bg={isProductInWishlist ? "red.50" : "white"}
-          _hover={{
-            bg: isProductInWishlist ? "red.100" : "gray.100",
-            color: isProductInWishlist ? "red.600" : "red.400",
-          }}
-          onClick={handleWishlistToggle}
+        <WishlistToggle
+          isActive={isProductInWishlist}
           isLoading={wishlistLoading}
-          zIndex={2}
+          onToggle={handleWishlistToggle}
+          ariaLabelAdd="Add to wishlist"
+          ariaLabelRemove="Remove from wishlist"
+          position={{ top: 2, right: 2 }}
+          size="sm"
         />
       )}
 

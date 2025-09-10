@@ -14,7 +14,7 @@ import {
   Divider,
   Badge,
 } from '@chakra-ui/react';
-import { ProductSearchResponse, ProductSortField, ProductSortDirection, ProductSearchFilters } from '../../types';
+import { ProductSearchResponse, ProductSortField, ProductSortDirection, ProductSearchFilters, Category, Store } from '../../types';
 import ProductCard from '../Product/ProductCard';
 
 interface SearchResultsProps {
@@ -26,6 +26,9 @@ interface SearchResultsProps {
   onLoadMore?: () => void;
   isLoading: boolean;
   isLoadingMore?: boolean;
+  availableCategories: Category[];
+  availableStores: Store[];
+  priceRange: { min: number; max: number };
 }
 
 const SearchResults: React.FC<SearchResultsProps> = ({
@@ -37,6 +40,9 @@ const SearchResults: React.FC<SearchResultsProps> = ({
   onLoadMore,
   isLoading,
   isLoadingMore = false,
+  availableCategories,
+  availableStores,
+  priceRange,
 }) => {
   const bgColor = useColorModeValue('white', 'gray.700');
   const borderColor = useColorModeValue('gray.200', 'gray.600');
@@ -71,22 +77,22 @@ const SearchResults: React.FC<SearchResultsProps> = ({
       activeFilters.push(`"${filters.searchTerm}"`);
     }
     
-    if (filters.categoryId && searchResponse?.filters.categories) {
-      const category = searchResponse.filters.categories.find(c => c.id === filters.categoryId);
+    if (filters.categoryId && availableCategories?.length) {
+      const category = availableCategories.find(c => c.id === filters.categoryId);
       if (category) {
         activeFilters.push(`Category: ${category.name}`);
       }
     }
     
     if (filters.minPrice !== undefined || filters.maxPrice !== undefined) {
-      const min = filters.minPrice || searchResponse?.filters.priceRange.min || 0;
-      const max = filters.maxPrice || searchResponse?.filters.priceRange.max || 999999;
+      const min = filters.minPrice ?? priceRange.min ?? 0;
+      const max = filters.maxPrice ?? priceRange.max ?? 999999;
       activeFilters.push(`Price: $${min} - $${max}`);
     }
     
     
-    if (filters.storeId && searchResponse?.filters.availableStores) {
-      const store = searchResponse.filters.availableStores.find(s => s.id === filters.storeId);
+    if (filters.storeId && availableStores?.length) {
+      const store = availableStores.find(s => s.id === filters.storeId);
       if (store) {
         activeFilters.push(`Store: ${store.name}`);
       }
