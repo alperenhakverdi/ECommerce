@@ -215,7 +215,7 @@ const Navbar: React.FC = () => {
                   <>
                     <ChakraLink
                       as={RouterLink}
-                      to="/store/products"
+                      to="/store/dashboard?tab=products"
                       _hover={{ textDecoration: 'none', color: 'green.600', bg: 'green.50' }}
                       display={{ base: 'none', xl: 'block' }}
                       fontWeight="500"
@@ -229,7 +229,7 @@ const Navbar: React.FC = () => {
                     </ChakraLink>
                     <ChakraLink
                       as={RouterLink}
-                      to="/store/orders"
+                      to="/store/dashboard?tab=orders"
                       _hover={{ textDecoration: 'none', color: 'purple.600', bg: 'purple.50' }}
                       display={{ base: 'none', xl: 'block' }}
                       fontWeight="500"
@@ -241,20 +241,7 @@ const Navbar: React.FC = () => {
                     >
                       📋 Orders
                     </ChakraLink>
-                    <ChakraLink
-                      as={RouterLink}
-                      to="/store/analytics"
-                      _hover={{ textDecoration: 'none', color: 'orange.600', bg: 'orange.50' }}
-                      display={{ base: 'none', xl: 'block' }}
-                      fontWeight="500"
-                      color="gray.600"
-                      px={3}
-                      py={2}
-                      borderRadius="md"
-                      transition="all 0.2s"
-                    >
-                      📈 Analytics
-                    </ChakraLink>
+                    {/* Analytics link removed per Option A simplification */}
                   </>
                 )}
               </>
@@ -390,10 +377,10 @@ const Navbar: React.FC = () => {
                   </MenuItem>
                   {hasStore && (
                     <>
-                      <MenuItem onClick={() => navigate('/store/products')}>
+                      <MenuItem onClick={() => navigate('/store/dashboard?tab=products')}>
                         📦 Products
                       </MenuItem>
-                      <MenuItem onClick={() => navigate('/store/orders')}>
+                      <MenuItem onClick={() => navigate('/store/dashboard?tab=orders')}>
                         📋 Orders
                       </MenuItem>
                       <MenuDivider />

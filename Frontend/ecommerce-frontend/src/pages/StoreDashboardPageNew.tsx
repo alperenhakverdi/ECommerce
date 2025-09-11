@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Box,
   Container,
@@ -237,6 +237,7 @@ StoreDashboardContent.displayName = 'StoreDashboardContent';
 const StoreDashboardContainer: React.FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const toast = useToast();
   const { user, isLoading: authLoading } = useAuth();
   const { isOpen, onOpen, onClose } = useDisclosure();
@@ -293,6 +294,12 @@ const StoreDashboardContainer: React.FC = () => {
 
   // Load stores on mount and auth change
   useEffect(() => {
+    // Ensure a default tab is always present in URL for clarity
+    const tab = searchParams.get('tab');
+    if (!tab) {
+      setSearchParams({ tab: 'statistics' }, { replace: true });
+    }
+
     // Don't redirect while authentication is loading
     if (authLoading) return;
     
@@ -303,7 +310,7 @@ const StoreDashboardContainer: React.FC = () => {
     }
 
     fetchMyStores();
-  }, [user, authLoading, navigate, fetchMyStores]);
+  }, [user, authLoading, navigate, fetchMyStores, searchParams, setSearchParams]);
 
   // Show loading while authentication is being checked or data is loading
   if (authLoading || loading) {

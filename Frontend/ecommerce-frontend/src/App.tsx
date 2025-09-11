@@ -1,6 +1,6 @@
 import React from 'react';
 import { ChakraProvider, Box } from '@chakra-ui/react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import './i18n';
 import theme from './theme';
 import { CartProvider } from './context/CartContext';
@@ -68,6 +68,10 @@ function App() {
                   <Route path="/orders/:id/track" element={<OrderTrackRedirect />} />
                   <Route path="/payment/confirmation" element={<PaymentConfirmationPage />} />
                   <Route path="/store/dashboard" element={<StoreDashboardPageNew />} />
+                  {/* Legacy shortcuts to dashboard tabs */}
+                  <Route path="/store/products" element={<Navigate to="/store/dashboard?tab=products" replace />} />
+                  <Route path="/store/orders" element={<Navigate to="/store/dashboard?tab=orders" replace />} />
+                  <Route path="/store/analytics" element={<Navigate to="/store/dashboard?tab=statistics" replace />} />
                   <Route path="/store/products/new" element={<ProductFormPage />} />
                   <Route path="/store/products/:id/edit" element={<ProductFormPage />} />
                   <Route path="/store/:id" element={<StorePage />} />
