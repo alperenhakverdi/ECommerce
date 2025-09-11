@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import {
   Box,
   Container,
@@ -26,7 +26,7 @@ import {
 import { FiArrowLeft, FiUpload, FiSave } from 'react-icons/fi';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
-import { productsApi, storesApi } from '../services/api';
+import { productsApi, storesApi, uploadsApi } from '../services/api';
 import { generateProductId } from '../utils/storeUtils';
 
 interface ProductFormData {
@@ -36,6 +36,7 @@ interface ProductFormData {
   category: string;
   stock: number;
   images: string[];
+  imageUrl: string;
 }
 
 const ProductFormPage: React.FC = () => {
@@ -51,13 +52,17 @@ const ProductFormPage: React.FC = () => {
     category: '',
     stock: 0,
     images: [],
+    imageUrl: '',
   });
   
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [imagePreview, setImagePreview] = useState<string>('');
   const [userStores, setUserStores] = useState<any[]>([]);
   const [selectedStoreId, setSelectedStoreId] = useState<string>('');
   const [categories, setCategories] = useState<any[]>([]);
+  const { id: editProductId } = useParams();
+  const isEditMode = Boolean(editProductId);
 
   const bgColor = useColorModeValue('white', 'gray.800');
   const borderColor = useColorModeValue('gray.200', 'gray.600');
@@ -85,8 +90,32 @@ const ProductFormPage: React.FC = () => {
       const response = await fetch('http://localhost:5133/api/categories');
       const data = await response.json();
       setCategories(data);
+      if (Array.isArray(data) && data.length > 0 && !formData.category) {
+        setFormData(prev => ({ ...prev, category: data[0].id }));
+      }
     } catch (error) {
       console.error('Failed to load categories:', error);
+    }
+  };
+
+  const loadProductForEdit = async (productId: string) => {
+    try {
+      const response = await productsApi.getById(productId);
+      const p = response.data;
+      setFormData(prev => ({
+        ...prev,
+        name: p.name || '',
+        description: p.description || '',
+        price: p.price || 0,
+        category: p.categoryId || '',
+        stock: p.stock || 0,
+        imageUrl: p.imageUrl || ''
+      }));
+      if (p.storeId) setSelectedStoreId(p.storeId);
+      if (p.imageUrl) setImagePreview(p.imageUrl);
+    } catch (error) {
+      console.error('Failed to load product for edit:', error);
+      toast({ title: 'Error', description: 'Failed to load product.', status: 'error', duration: 4000 });
     }
   };
 
@@ -97,8 +126,11 @@ const ProductFormPage: React.FC = () => {
     } else if (user && user.roles?.includes('StoreOwner')) {
       loadUserStores();
       loadCategories();
+      if (isEditMode && editProductId) {
+        loadProductForEdit(editProductId);
+      }
     }
-  }, [user, isLoading, navigate, loadUserStores, loadCategories]);
+  }, [user, isLoading, navigate, loadUserStores, loadCategories, isEditMode, editProductId]);
 
   const handleInputChange = (field: keyof ProductFormData, value: any) => {
     setFormData(prev => ({
@@ -110,16 +142,24 @@ const ProductFormPage: React.FC = () => {
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
+      // Preview locally
       const reader = new FileReader();
-      reader.onloadend = () => {
-        const result = reader.result as string;
-        setImagePreview(result);
-        setFormData(prev => ({
-          ...prev,
-          images: [result] // For now, single image
-        }));
-      };
+      reader.onloadend = () => setImagePreview(reader.result as string);
       reader.readAsDataURL(file);
+
+      // Upload to backend and set URL
+      setIsUploadingImage(true);
+      uploadsApi.uploadImage(file)
+        .then(res => {
+          const url = res.data?.url || '';
+          setFormData(prev => ({ ...prev, imageUrl: url }));
+          // Replace preview with hosted URL when available
+          if (url) setImagePreview(url);
+        })
+        .catch(() => {
+          toast({ title: 'Image upload failed', description: 'You can paste an image URL instead.', status: 'warning', duration: 4000 });
+        })
+        .finally(() => setIsUploadingImage(false));
     }
   };
 
@@ -135,6 +175,16 @@ const ProductFormPage: React.FC = () => {
       return;
     }
 
+    if (!formData.category) {
+      toast({
+        title: 'Validation Error',
+        description: 'Please select a category.',
+        status: 'error',
+        duration: 4000,
+      });
+      return;
+    }
+
     if (!selectedStoreId) {
       toast({
         title: 'Error',
@@ -142,6 +192,33 @@ const ProductFormPage: React.FC = () => {
         status: 'error',
         duration: 4000,
       });
+      return;
+    }
+
+    // Basic client-side validation to prevent avoidable 400s
+    if (!formData.name.trim()) {
+      toast({ title: 'Error', description: 'Product name is required.', status: 'error', duration: 3000 });
+      return;
+    }
+    if (!formData.category) {
+      toast({ title: 'Error', description: 'Please select a category.', status: 'error', duration: 3000 });
+      return;
+    }
+    if (!formData.price || formData.price <= 0) {
+      toast({ title: 'Error', description: 'Price must be greater than 0.', status: 'error', duration: 3000 });
+      return;
+    }
+    if (formData.stock < 0) {
+      toast({ title: 'Error', description: 'Stock cannot be negative.', status: 'error', duration: 3000 });
+      return;
+    }
+    if (formData.imageUrl && !/^https?:\/\/.*\.(jpg|jpeg|png|gif|webp)$/i.test(formData.imageUrl.trim())) {
+      toast({ title: 'Error', description: 'Please enter a valid image URL (jpg, jpeg, png, gif, webp).', status: 'error', duration: 3000 });
+      return;
+    }
+
+    if (isUploadingImage) {
+      toast({ title: 'Please wait', description: 'Image is still uploading. Try again in a moment.', status: 'info', duration: 3000 });
       return;
     }
 
@@ -162,10 +239,10 @@ const ProductFormPage: React.FC = () => {
         name: formData.name.trim(),
         description: formData.description.trim(),
         basePrice: formData.price,  // Backend expects basePrice
-        price: formData.price,      // Backward compatibility
+        price: formData.price,      // Used by backend for creation
         stock: formData.stock,
-        imageUrl: 'https://via.placeholder.com/300x300?text=Product',
-        categoryId: formData.category,  // This should be a valid GUID string
+        imageUrl: formData.imageUrl?.trim() || '',
+        categoryId: formData.category,  // Must be a valid GUID string
         // storeId will be set by the backend from URL parameter
         hasVariants: false,
         weight: 0,
@@ -173,25 +250,39 @@ const ProductFormPage: React.FC = () => {
         variants: []
       };
 
-      // Create product via backend API
-      console.log('Creating product for store:', selectedStoreId, 'with data:', productData);
-      
-      try {
-        // Use store-specific API (preferred)
-        console.log('Trying storesApi.createProduct...');
-        await storesApi.createProduct(selectedStoreId, productData);
-        console.log('✅ storesApi.createProduct succeeded');
-      } catch (firstError: any) {
-        console.log('❌ storesApi.createProduct failed:', firstError?.response?.status, firstError?.response?.data);
-        
+      if (isEditMode && editProductId) {
+        // Update existing product
+        const updatePayload = {
+          name: productData.name,
+          description: productData.description,
+          price: productData.price,
+          stock: productData.stock,
+          imageUrl: productData.imageUrl,
+          categoryId: productData.categoryId,
+          isActive: true,
+        };
+        await productsApi.update(editProductId, updatePayload);
+      } else {
+        // Create product via backend API
+        console.log('Creating product for store:', selectedStoreId, 'with data:', productData);
         try {
-          // Fallback to general products API  
-          console.log('Trying productsApi.create...');
-          await productsApi.create(productData);
-          console.log('✅ productsApi.create succeeded');
-        } catch (secondError: any) {
-          console.log('❌ Both API endpoints failed:', secondError?.response?.status, secondError?.response?.data);
-          throw secondError; // Re-throw the last error
+          // Use store-specific API (preferred)
+          console.log('Trying storesApi.createProduct...');
+          await storesApi.createProduct(selectedStoreId, productData);
+          console.log('✅ storesApi.createProduct succeeded');
+        } catch (firstError: any) {
+          console.log('❌ storesApi.createProduct failed:', firstError?.response?.status, firstError?.response?.data);
+          
+          try {
+            // Fallback to general products API (include storeId explicitly)
+            console.log('Trying productsApi.create...');
+            const generalPayload = { ...productData, storeId: selectedStoreId };
+            await productsApi.create(generalPayload);
+            console.log('✅ productsApi.create succeeded');
+          } catch (secondError: any) {
+            console.log('❌ Both API endpoints failed:', secondError?.response?.status, secondError?.response?.data);
+            throw secondError; // Re-throw the last error
+          }
         }
       }
 
@@ -206,7 +297,22 @@ const ProductFormPage: React.FC = () => {
       navigate('/store/dashboard?tab=products');
     } catch (error: any) {
       console.error('Product creation failed:', error);
-      const errorMessage = error?.response?.data?.message || 'Failed to create product. Please try again.';
+      // Try to extract backend validation errors (ModelState)
+      let errorMessage = 'Failed to create product. Please try again.';
+      const data = error?.response?.data;
+      if (typeof data === 'string') {
+        errorMessage = data;
+      } else if (data?.message) {
+        errorMessage = data.message;
+      } else if (data?.errors) {
+        const firstKey = Object.keys(data.errors)[0];
+        if (firstKey) {
+          const msgs = data.errors[firstKey];
+          if (Array.isArray(msgs) && msgs.length > 0) {
+            errorMessage = msgs[0];
+          }
+        }
+      }
       toast({
         title: 'Error',
         description: errorMessage,
@@ -243,7 +349,7 @@ const ProductFormPage: React.FC = () => {
         <Card bg={bgColor} borderColor={borderColor}>
           <CardHeader>
             <Text fontSize="2xl" fontWeight="bold">
-              Add New Product
+              {isEditMode ? 'Edit Product' : 'Add New Product'}
             </Text>
           </CardHeader>
 
@@ -329,6 +435,16 @@ const ProductFormPage: React.FC = () => {
                 </Select>
               </FormControl>
 
+              {/* Image URL (preferred) */}
+              <FormControl>
+                <FormLabel>Image URL</FormLabel>
+                <Input
+                  value={formData.imageUrl}
+                  onChange={(e) => handleInputChange('imageUrl', e.target.value)}
+                  placeholder="https://example.com/image.jpg"
+                />
+              </FormControl>
+
               {/* Image Upload */}
               <FormControl>
                 <FormLabel>Product Image</FormLabel>
@@ -350,10 +466,10 @@ const ProductFormPage: React.FC = () => {
                     Upload Image
                   </Button>
                   
-                  {imagePreview && (
+                  {(imagePreview || formData.imageUrl) && (
                     <AspectRatio ratio={16/9} maxW="300px">
                       <Image
-                        src={imagePreview}
+                        src={imagePreview || formData.imageUrl}
                         alt="Product preview"
                         borderRadius="md"
                         objectFit="cover"
@@ -377,10 +493,10 @@ const ProductFormPage: React.FC = () => {
                   colorScheme="blue"
                   leftIcon={<FiSave />}
                   onClick={handleSubmit}
-                  isLoading={isSubmitting}
-                  loadingText="Creating..."
+                  isLoading={isSubmitting || isUploadingImage}
+                  loadingText={isUploadingImage ? 'Uploading image...' : (isEditMode ? 'Saving...' : 'Creating...')}
                 >
-                  Create Product
+                  {isEditMode ? 'Save Changes' : 'Create Product'}
                 </Button>
               </HStack>
             </VStack>

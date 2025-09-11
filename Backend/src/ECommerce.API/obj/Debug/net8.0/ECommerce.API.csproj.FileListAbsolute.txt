@@ -247,3 +247,4 @@
 /home/wsl-alpdev/ECommerce/Backend/src/ECommerce.API/bin/Debug/net8.0/StackExchange.Redis.dll
 /home/wsl-alpdev/ECommerce/Backend/src/ECommerce.API/obj/Debug/net8.0/ECommerce.API.csproj.CopyComplete
 /home/wsl-alpdev/ECommerce/Backend/src/ECommerce.API/obj/Debug/net8.0/ECommerce.API.sourcelink.json
+/home/wsl-alpdev/ECommerce/Backend/src/ECommerce.API/bin/Debug/net8.0/ECommerce.API.staticwebassets.runtime.json

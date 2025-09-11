@@ -8,17 +8,21 @@ import {
   AlertIcon,
   Badge,
   Box,
+  useToast,
 } from '@chakra-ui/react';
 import { FiPlus, FiEdit, FiTrash2 } from 'react-icons/fi';
 import { useNavigate } from 'react-router-dom';
 import { Product, Store } from '../../types';
 import { VirtualTable } from '../VirtualTable';
+import { generateProductId } from '../../utils/storeUtils';
+import { productsApi } from '../../services/api';
 
 interface ProductsTabProps {
   store: Store;
   products: Product[];
   loading: boolean;
   error: string | null;
+  refreshProducts: () => Promise<void>;
 }
 
 interface ProductTableColumn {
@@ -33,8 +37,10 @@ const ProductsTabComponent: React.FC<ProductsTabProps> = ({
   products,
   loading,
   error,
+  refreshProducts,
 }) => {
   const navigate = useNavigate();
+  const toast = useToast();
 
   // Memoized table columns to prevent re-creation on each render
   const columns = useMemo<ProductTableColumn[]>(() => [
@@ -46,7 +52,10 @@ const ProductsTabComponent: React.FC<ProductsTabProps> = ({
         <VStack align="start" spacing={1}>
           <Text fontWeight="medium">{item.name}</Text>
           <Text fontSize="sm" color="gray.600">
-            ID: {item.id}
+            ID: {item.id?.slice(0, 8)}
+          </Text>
+          <Text fontSize="xs" color="gray.500">
+            Code: {generateProductId(item.name, store.id)}
           </Text>
         </VStack>
       ),
@@ -99,10 +108,17 @@ const ProductsTabComponent: React.FC<ProductsTabProps> = ({
             variant="outline"
             colorScheme="red"
             leftIcon={<FiTrash2 />}
-            onClick={(e) => {
+            onClick={async (e) => {
               e.stopPropagation();
-              // TODO: Implement delete functionality
-              console.log('Delete product:', item.id);
+              if (!confirm('Delete this product?')) return;
+              try {
+                await productsApi.delete(item.id);
+                toast({ title: 'Product deleted', status: 'success', duration: 2500 });
+                await refreshProducts();
+              } catch (err: any) {
+                const msg = err?.response?.data?.message || 'Failed to delete product';
+                toast({ title: 'Delete failed', description: msg, status: 'error', duration: 3500 });
+              }
             }}
           >
             Delete
@@ -110,7 +126,7 @@ const ProductsTabComponent: React.FC<ProductsTabProps> = ({
         </HStack>
       ),
     },
-  ], [navigate]);
+  ], [navigate, refreshProducts, toast]);
 
   // Memoized row click handler
   const handleRowClick = useCallback((product: Product) => {

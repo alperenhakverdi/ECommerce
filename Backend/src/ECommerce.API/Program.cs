@@ -105,6 +105,8 @@ builder.Services.AddAuthorization();
 // Add Metrics Service
 builder.Services.AddSingleton<ECommerce.API.Services.IMetricsService, ECommerce.API.Services.MetricsService>();
 
+// Enable static file serving (for uploaded images)
+builder.Services.AddDirectoryBrowser();
 // Add Health Checks
 builder.Services.AddHealthChecks()
     .AddDbContextCheck<ECommerce.Infrastructure.Data.ECommerceDbContext>("database")
@@ -164,6 +166,9 @@ else
 {
     app.UseCors("AllowAll");
 }
+
+// Serve static files from wwwroot (e.g., /uploads)
+app.UseStaticFiles();
 
 app.UseRouting();
 

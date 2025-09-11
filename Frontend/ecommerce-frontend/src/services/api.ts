@@ -245,7 +245,7 @@ export const storesApi = {
   
   // Create product for store (store owner only)
   createProduct: (storeId: string, product: any) => 
-    api.post<Product>(`/stores/${storeId}/products`, product),
+    api.post<Product>(`/stores/${storeId}/products`, product, { timeout: 12000 }),
 
   // Store orders (store owner only)
   getOrders: (id: string, page?: number, pageSize?: number) => 
@@ -373,13 +373,25 @@ export const recentlyViewedApi = {
   get: () => api.get<RecentlyViewedItem[]>('/user/recently-viewed'),
   
   // Add product to recently viewed (automatically called when viewing product)
-  add: (productId: string) => api.post('/user/recently-viewed', { productId }),
+  add: (productId: string) => api.post(`/user/recently-viewed/${productId}`, undefined),
   
   // Clear recently viewed history
   clear: () => api.delete('/user/recently-viewed'),
   
   // Remove specific product from recently viewed
   remove: (productId: string) => api.delete(`/user/recently-viewed/${productId}`),
+};
+
+// Uploads API (multipart)
+export const uploadsApi = {
+  uploadImage: (file: File) => {
+    const form = new FormData();
+    form.append('file', file);
+    return api.post<{ url: string }>(`/uploads/images`, form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 20000,
+    });
+  },
 };
 
 export { api };

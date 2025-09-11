@@ -531,7 +531,9 @@ public class StoresController : ControllerBase
             createProductDto.StoreId = id;
 
             var product = await _storeService.CreateProductAsync(id, createProductDto);
-            return CreatedAtAction(nameof(GetStore), new { id = product.Id }, product);
+            // Return Location header pointing to the product resource
+            return CreatedAtAction(nameof(ProductsController.GetProductById), 
+                                   "Products", new { id = product.Id }, product);
         }
         catch (Exception ex)
         {

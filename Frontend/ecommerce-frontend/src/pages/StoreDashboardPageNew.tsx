@@ -118,6 +118,7 @@ const StoreDashboardContent: React.FC = React.memo(() => {
             products={products}
             loading={loadingStates.products}
             error={errors.products}
+            refreshProducts={() => refreshData('products')}
           />
         </TabPanel>
 

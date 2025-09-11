@@ -1,0 +1,29 @@
+{
+  "Files": [
+    {
+      "Id": "/home/wsl-alpdev/ECommerce/Backend/src/ECommerce.API/wwwroot/uploads/products/767564bf-96c3-41b8-b971-742d2ef26694.jpg",
+      "PackagePath": "staticwebassets/uploads/products/767564bf-96c3-41b8-b971-742d2ef26694.jpg"
+    },
+    {
+      "Id": "/home/wsl-alpdev/ECommerce/Backend/src/ECommerce.API/wwwroot/uploads/products/b88716be-c796-40a4-9a56-6d582ddfd27b.png",
+      "PackagePath": "staticwebassets/uploads/products/b88716be-c796-40a4-9a56-6d582ddfd27b.png"
+    },
+    {
+      "Id": "obj/Debug/net8.0/staticwebassets/msbuild.ECommerce.API.Microsoft.AspNetCore.StaticWebAssets.props",
+      "PackagePath": "build\\Microsoft.AspNetCore.StaticWebAssets.props"
+    },
+    {
+      "Id": "obj/Debug/net8.0/staticwebassets/msbuild.build.ECommerce.API.props",
+      "PackagePath": "build\\ECommerce.API.props"
+    },
+    {
+      "Id": "obj/Debug/net8.0/staticwebassets/msbuild.buildMultiTargeting.ECommerce.API.props",
+      "PackagePath": "buildMultiTargeting\\ECommerce.API.props"
+    },
+    {
+      "Id": "obj/Debug/net8.0/staticwebassets/msbuild.buildTransitive.ECommerce.API.props",
+      "PackagePath": "buildTransitive\\ECommerce.API.props"
+    }
+  ],
+  "ElementsToRemove": []
+}

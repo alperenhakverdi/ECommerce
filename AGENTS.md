@@ -1,7 +1,7 @@
 # Repository Guidelines
 
 ## Project Structure & Module Organization
-- Root: Docker and deployment scripts (`docker-compose*.yml`, `scripts/`).
+- Root: Docker/deploy (`docker-compose*.yml`, `scripts/`).
 - Backend (.NET 8): `Backend/`
   - Solution: `Backend/ECommerce.sln`
   - Layers: `src/ECommerce.Domain`, `src/ECommerce.Application`, `src/ECommerce.Infrastructure`, `src/ECommerce.API`
@@ -23,29 +23,22 @@
   - Tests (Jest/RTL): `npm test -- --coverage --watchAll=false`
 
 ## Coding Style & Naming Conventions
-- C#
-  - 4-space indent, file-scoped namespaces; PascalCase for types/methods; camelCase for locals/params; async methods end with `Async`.
-  - Prefer DI, `var` for local inference, nullable reference types enabled where applicable.
-- TypeScript/React
-  - 2-space indent; components in `src/components` use `PascalCase` filenames (e.g., `ProductCard.tsx`).
-  - Hooks start with `use*`; keep API logic in `src/services`.
-- Linting/formatting
-  - Frontend uses ESLint via `eslint-config-react-app`. Type check with `npx tsc --noEmit`.
+- C#: 4-space indent; file-scoped namespaces; PascalCase for types/methods; camelCase for locals/params; async methods end with `Async`. Prefer DI, use `var` for local inference, enable nullable reference types where applicable.
+- TypeScript/React: 2-space indent; components in `src/components` use `PascalCase` (e.g., `ProductCard.tsx`); hooks start with `use*`; keep API logic in `src/services`. Lint with ESLint (`eslint-config-react-app`); type-check with `npx tsc --noEmit`.
 
 ## Testing Guidelines
-- Backend: xUnit tests live in `Backend/tests/**`. Add new tests alongside features. Use `Fact`/`Theory` and keep tests deterministic.
-- Frontend: Place tests under `src/tests` as `*.test.ts`/`*.test.tsx`. Use React Testing Library for UI behavior.
-- Aim for meaningful coverage on business logic and critical flows (CI collects coverage for both).
+- Backend: xUnit tests live in `Backend/tests/**`. Use `Fact`/`Theory`; keep tests deterministic and focused on business logic. Run coverage via the dotnet test command above.
+- Frontend: place tests under `Frontend/ecommerce-frontend/src/tests` as `*.test.ts`/`*.test.tsx`; use React Testing Library. Collect coverage with `npm test -- --coverage`.
 
 ## Commit & Pull Request Guidelines
-- Use Conventional Commits: `feat:`, `fix:`, `chore:`, `docs:`, `test:`, `refactor:`.
-  - Example: `feat(cart): persist items in session`
-- Pull Requests
-  - Include clear description, linked issues (`Closes #123`), and screenshots/GIFs for UI changes.
-  - Ensure: builds pass, tests added/updated, no secrets committed. Small, focused PRs are preferred.
+- Commits: Conventional Commits (e.g., `feat(cart): persist items in session`).
+- Pull Requests: include clear description, linked issues (e.g., `Closes #123`), and screenshots/GIFs for UI changes. Ensure builds pass, tests are added/updated, and no secrets are committed. Prefer small, focused PRs.
 
 ## Security & Configuration Tips
-- Never commit real secrets. Use `.env.example` (root and frontend) to document required variables; copy to `.env` locally.
-- Validate API base URLs (`REACT_APP_API_URL`) and backend connection strings before running.
+- Do not commit real secrets. Use `.env.example` (root and frontend) to document required variables; copy to `.env` locally.
+- Validate `REACT_APP_API_URL` and backend connection strings before running.
 - Run `npm audit` in `Frontend/ecommerce-frontend` and keep dependencies updated.
+
+## Agent-Specific Notes
+- This file applies repo-wide. If nested `AGENTS.md` files exist, deeper ones take precedence. Follow the styles and commands above when generating or modifying code.
 
