@@ -12,17 +12,20 @@ namespace ECommerce.API.Controllers;
 public class StoresController : ControllerBase
 {
     private readonly IStoreService _storeService;
+    private readonly IOrderService _orderService;
     private readonly IEmailService _emailService;
     private readonly ILogger<StoresController> _logger;
 
     public StoresController(
         IStoreService storeService, 
         IEmailService emailService,
-        ILogger<StoresController> logger)
+        ILogger<StoresController> logger,
+        IOrderService orderService)
     {
         _storeService = storeService;
         _emailService = emailService;
         _logger = logger;
+        _orderService = orderService;
     }
 
     // GET: api/stores
@@ -38,6 +41,63 @@ public class StoresController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error occurred while getting stores");
+            return StatusCode(500, "Internal server error");
+        }
+    }
+
+    // PATCH: api/stores/{id}/orders/{orderId}/status
+    [HttpPatch("{id}/orders/{orderId}/status")]
+    [Authorize(Roles = "StoreOwner,Admin")]
+    public async Task<IActionResult> UpdateStoreOrderStatus(Guid id, Guid orderId, [FromBody] UpdateOrderStatusDto updateStatusDto)
+    {
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
+
+        try
+        {
+            var userId = GetCurrentUserId();
+            if (userId == Guid.Empty)
+                return Unauthorized("Invalid user token");
+
+            // Verify user owns this store (unless admin)
+            if (!User.IsInRole(UserRoles.Admin))
+            {
+                var store = await _storeService.GetByIdAsync(id);
+                if (store == null)
+                    return NotFound("Store not found");
+                if (store.OwnerId != userId)
+                    return Forbid("You don't have permission to update orders for this store");
+            }
+
+            // Ensure the order belongs to this store context
+            var canManage = await _storeService.CanStoreManageOrderAsync(id, orderId);
+            if (!canManage)
+            {
+                return Forbid("This order does not belong to your store");
+            }
+
+            // Restrict statuses store owners can set (allow Shipped or Delivered)
+            var target = updateStatusDto.Status;
+            if (!User.IsInRole(UserRoles.Admin))
+            {
+                if (target != Domain.Enums.OrderStatus.Shipped && target != Domain.Enums.OrderStatus.Delivered)
+                {
+                    return BadRequest("Store owners can only mark orders as Shipped or Delivered");
+                }
+            }
+
+            var ok = await _orderService.UpdateOrderStatusAsync(orderId, target);
+            if (!ok)
+            {
+                return NotFound("Order not found");
+            }
+            return NoContent();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error updating order status for store {StoreId} order {OrderId}", id, orderId);
             return StatusCode(500, "Internal server error");
         }
     }
@@ -545,7 +605,7 @@ public class StoresController : ControllerBase
     // GET: api/stores/{id}/orders
     [HttpGet("{id}/orders")]
     [Authorize(Roles = "StoreOwner,Admin")]
-    public async Task<ActionResult<IEnumerable<object>>> GetStoreOrders(Guid id, [FromQuery] int page = 1, [FromQuery] int pageSize = 50)
+    public async Task<ActionResult<IEnumerable<OrderDto>>> GetStoreOrders(Guid id, [FromQuery] int page = 1, [FromQuery] int pageSize = 50)
     {
         try
         {
@@ -566,10 +626,8 @@ public class StoresController : ControllerBase
                     return Forbid("You don't have permission to view orders for this store");
             }
 
-            // TODO: Implement GetStoreOrdersAsync in StoreService
-            // For now, return empty list as this endpoint was missing
-            var emptyOrders = new List<object>();
-            return Ok(emptyOrders);
+            var orders = await _storeService.GetStoreOrdersAsync(id, page, pageSize);
+            return Ok(orders);
         }
         catch (Exception ex)
         {

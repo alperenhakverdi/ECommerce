@@ -177,6 +177,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick }) => {
             src={product.imageUrl}
             alt={product.name}
             objectFit="cover"
+            objectPosition="center"
             h="200px"
             w="100%"
             fallback={<Box bg="gray.100" h="200px" w="100%" />}

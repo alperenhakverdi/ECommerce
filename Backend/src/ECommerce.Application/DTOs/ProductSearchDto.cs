@@ -7,6 +7,7 @@ public class ProductSearchRequest
     public decimal? MinPrice { get; set; }
     public decimal? MaxPrice { get; set; }
     public bool? InStockOnly { get; set; }
+    public string? Gender { get; set; } // "women", "men", "unisex"
     public string? SortBy { get; set; } // "name", "price", "created", "popularity"
     public string? SortDirection { get; set; } // "asc", "desc"
     public int Page { get; set; } = 1;

@@ -5,6 +5,7 @@ using ECommerce.Domain.Interfaces;
 using ECommerce.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using ECommerce.Domain.Enums;
 
 namespace ECommerce.Infrastructure.Services;
 
@@ -483,7 +484,7 @@ public class StoreService : IStoreService
             IsActive = true,
             HasVariants = false,
             Weight = 0,
-            Tags = null,
+            Tags = createProductDto.Tags,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
         };
@@ -499,6 +500,100 @@ public class StoreService : IStoreService
         _logger.LogInformation("Product created successfully: {ProductId} for store: {StoreId}", product.Id, storeId);
         
         return MapProductToDto(product);
+    }
+
+    public async Task<IEnumerable<OrderDto>> GetStoreOrdersAsync(Guid storeId, int page = 1, int pageSize = 50)
+    {
+        try
+        {
+            var skip = (page - 1) * pageSize;
+
+            // Fetch orders that belong to this store (either assigned directly or via items of products in this store)
+            var orders = await _context.Orders
+                .Include(o => o.Items)
+                    .ThenInclude(oi => oi.Product)
+                .Include(o => o.ShippingAddress)
+                .Where(o => (o.StoreId.HasValue && o.StoreId == storeId)
+                            || o.Items.Any(oi => oi.Product != null && oi.Product.StoreId == storeId))
+                .OrderByDescending(o => o.CreatedAt)
+                .Skip(skip)
+                .Take(pageSize)
+                .ToListAsync();
+
+            // Map to OrderDto; include only items that belong to this store and recompute TotalAmount accordingly
+            var result = orders.Select(o => new OrderDto
+            {
+                Id = o.Id,
+                UserId = o.UserId,
+                OrderNumber = o.OrderNumber,
+                // Sum only items from this store for store owner's perspective
+                TotalAmount = o.Items
+                    .Where(oi => oi.Product != null && oi.Product.StoreId == storeId)
+                    .Sum(oi => oi.Price * oi.Quantity),
+                Status = o.Status,
+                CustomerEmail = o.CustomerEmail,
+                CustomerName = o.CustomerName,
+                AddressId = o.AddressId,
+                ShippingAddress = MapAddressToDto(o.ShippingAddress),
+                CreatedAt = o.CreatedAt,
+                ShippedDate = o.ShippedDate,
+                DeliveredDate = o.DeliveredDate,
+                Items = o.Items
+                    .Where(oi => oi.Product != null && oi.Product.StoreId == storeId)
+                    .Select(oi => new OrderItemDto
+                    {
+                        Id = oi.Id,
+                        ProductId = oi.ProductId,
+                        ProductName = oi.ProductName,
+                        Quantity = oi.Quantity,
+                        Price = oi.Price,
+                        SubTotal = oi.Price * oi.Quantity
+                    }).ToList()
+            });
+
+            return result;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting orders for store {StoreId}", storeId);
+            return new List<OrderDto>();
+        }
+    }
+
+    private static AddressResponseDto MapAddressToDto(Address address)
+    {
+        return new AddressResponseDto
+        {
+            Id = address.Id,
+            Title = address.Title,
+            FirstName = address.FirstName,
+            LastName = address.LastName,
+            AddressLine1 = address.AddressLine1,
+            AddressLine2 = address.AddressLine2,
+            City = address.City,
+            State = address.State,
+            PostalCode = address.PostalCode,
+            Country = address.Country,
+            PhoneNumber = address.PhoneNumber,
+            IsDefault = address.IsDefault,
+            IsActive = address.IsActive,
+            UserId = address.UserId,
+            CreatedAt = address.CreatedAt,
+            UpdatedAt = address.UpdatedAt
+        };
+    }
+
+    public async Task<bool> CanStoreManageOrderAsync(Guid storeId, Guid orderId)
+    {
+        // Order belongs to store if Order.StoreId == storeId OR at least one item product.StoreId == storeId
+        var belongs = await _context.Orders
+            .Include(o => o.Items)
+                .ThenInclude(oi => oi.Product)
+            .AnyAsync(o => o.Id == orderId && (
+                (o.StoreId.HasValue && o.StoreId == storeId) ||
+                o.Items.Any(oi => oi.Product != null && oi.Product.StoreId == storeId)
+            ));
+        return belongs;
     }
 
     private static StoreListDto MapStoreToListDto(Store store)

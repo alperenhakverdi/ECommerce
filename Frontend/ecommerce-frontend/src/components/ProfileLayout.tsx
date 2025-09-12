@@ -63,9 +63,8 @@ export const ProfileLayout: React.FC<ProfileLayoutProps> = ({ children }) => {
 
   // Store Owner-specific navigation items
   const storeOwnerNavItems: NavigationItem[] = [
-    { id: 'store-dashboard', label: 'Store Dashboard', icon: '🏪', path: '/store/dashboard', roles: ['StoreOwner'] },
-    { id: 'store-analytics', label: 'Store Analytics', icon: '📊', path: '/store/analytics', roles: ['StoreOwner'] },
-    { id: 'store-settings', label: 'Store Settings', icon: '⚙️', path: '/store/dashboard?tab=settings', roles: ['StoreOwner'] },
+    // Only keep Store Settings under Account (Profile) section
+    { id: 'store-settings', label: 'Store Settings', icon: '⚙️', path: '/profile/store-settings', roles: ['StoreOwner'] },
   ];
 
   // Admin-specific navigation items
@@ -80,23 +79,27 @@ export const ProfileLayout: React.FC<ProfileLayoutProps> = ({ children }) => {
   const getFilteredNavItems = () => {
     if (!user || !user.roles) return commonNavItems;
     
-    // Start with common items (always visible)
-    const allItems = [...commonNavItems];
-    
-    // Add role-specific items based on user roles
-    if (user.roles.includes('Customer')) {
-      allItems.push(...customerNavItems);
+    const hasStoreOwner = user.roles.includes('StoreOwner');
+    const hasCustomer = user.roles.includes('Customer');
+    const hasAdmin = user.roles.includes('Admin');
+
+    // Always include common items
+    const items: NavigationItem[] = [...commonNavItems];
+
+    // For StoreOwner, hide customer-specific items in profile menu
+    if (!hasStoreOwner && hasCustomer) {
+      items.push(...customerNavItems);
     }
-    
-    if (user.roles.includes('StoreOwner')) {
-      allItems.push(...storeOwnerNavItems);
+
+    if (hasStoreOwner) {
+      items.push(...storeOwnerNavItems);
     }
-    
-    if (user.roles.includes('Admin')) {
-      allItems.push(...adminNavItems);
+
+    if (hasAdmin) {
+      items.push(...adminNavItems);
     }
-    
-    return allItems;
+
+    return items;
   };
 
   const navItems = getFilteredNavItems();
@@ -129,7 +132,13 @@ export const ProfileLayout: React.FC<ProfileLayoutProps> = ({ children }) => {
             </Text>
             {user?.roles && (
               <Text fontSize="xs" color="blue.600" fontWeight="medium">
-                {user.roles.join(', ')}
+                {(() => {
+                  const roles = user.roles || [];
+                  const display = roles.includes('StoreOwner')
+                    ? roles.filter(r => r !== 'Customer')
+                    : roles;
+                  return display.join(', ');
+                })()}
               </Text>
             )}
           </VStack>

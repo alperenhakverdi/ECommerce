@@ -478,19 +478,20 @@ const StoreDashboardPage: React.FC = () => {
 
   const updateOrderStatus = async (orderId: string, newStatus: OrderStatus) => {
     try {
-      // TODO: Implement actual API call
-      // await storesApi.updateOrderStatus(orderId, newStatus);
-      
-      // Update local state
+      if (!selectedStore) throw new Error('No store selected');
+
+      // Call backend API for store owner status update
+      await storesApi.updateOrderStatus(selectedStore.id, orderId, Number(newStatus));
+
+      // Optimistically update local state
       setStoreOrders(prevOrders =>
         prevOrders.map(order =>
-          order.id === orderId
-            ? { ...order, status: newStatus }
-            : order
+          order.id === orderId ? { ...order, status: newStatus } : order
         )
       );
 
-      const statusText = newStatus === OrderStatus.Shipped ? 'shipped' : 'delivered';
+      const statusText = newStatus === OrderStatus.Shipped ? 'shipped' :
+                         newStatus === OrderStatus.Delivered ? 'delivered' : 'updated';
       const order = storeOrders.find(o => o.id === orderId);
       
       toast({
@@ -500,10 +501,10 @@ const StoreDashboardPage: React.FC = () => {
         duration: 3000,
         isClosable: true,
       });
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: 'Update Failed',
-        description: 'Failed to update order status. Please try again.',
+        description: error?.response?.data?.message || 'Failed to update order status. Please try again.',
         status: 'error',
         duration: 4000,
         isClosable: true,

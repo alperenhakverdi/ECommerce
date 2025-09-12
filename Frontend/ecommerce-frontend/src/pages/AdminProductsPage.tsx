@@ -398,6 +398,7 @@ const AdminProductsPage: React.FC = () => {
                                 alt={product.name} 
                                 boxSize="40px" 
                                 objectFit="cover" 
+                                objectPosition="center"
                                 borderRadius="md"
                                 fallbackSrc="https://via.placeholder.com/40"
                               />

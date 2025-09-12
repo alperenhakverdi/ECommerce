@@ -7,7 +7,7 @@ export interface UseTabNavigationReturn {
   getTabFromUrl: () => string;
 }
 
-const TAB_NAMES = ['statistics', 'products', 'orders', 'settings'] as const;
+const TAB_NAMES = ['statistics', 'products', 'orders'] as const;
 
 export const useTabNavigation = (): UseTabNavigationReturn => {
   const [searchParams, setSearchParams] = useSearchParams();

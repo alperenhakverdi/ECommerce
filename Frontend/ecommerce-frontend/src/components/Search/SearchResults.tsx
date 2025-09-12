@@ -29,6 +29,7 @@ interface SearchResultsProps {
   availableCategories: Category[];
   availableStores: Store[];
   priceRange: { min: number; max: number };
+  pageSize?: number;
 }
 
 const SearchResults: React.FC<SearchResultsProps> = ({
@@ -43,6 +44,7 @@ const SearchResults: React.FC<SearchResultsProps> = ({
   availableCategories,
   availableStores,
   priceRange,
+  pageSize,
 }) => {
   const bgColor = useColorModeValue('white', 'gray.700');
   const borderColor = useColorModeValue('gray.200', 'gray.600');
@@ -60,8 +62,10 @@ const SearchResults: React.FC<SearchResultsProps> = ({
     if (!searchResponse) return '';
     
     const { totalCount, currentPage, products } = searchResponse;
-    const startItem = (currentPage - 1) * products.length + 1;
-    const endItem = Math.min(startItem + products.length - 1, totalCount);
+    const page = Number(currentPage) || 1;
+    const perPage = pageSize || products.length || 0;
+    const startItem = totalCount > 0 ? (page - 1) * perPage + 1 : 0;
+    const endItem = Math.min((page - 1) * perPage + (products.length || 0), totalCount);
     
     if (totalCount === 0) {
       return 'No products found';
@@ -85,9 +89,13 @@ const SearchResults: React.FC<SearchResultsProps> = ({
     }
     
     if (filters.minPrice !== undefined || filters.maxPrice !== undefined) {
-      const min = filters.minPrice ?? priceRange.min ?? 0;
-      const max = filters.maxPrice ?? priceRange.max ?? 999999;
-      activeFilters.push(`Price: $${min} - $${max}`);
+      if (filters.minPrice !== undefined && filters.maxPrice !== undefined) {
+        activeFilters.push(`Price: $${filters.minPrice} - $${filters.maxPrice}`);
+      } else if (filters.minPrice !== undefined) {
+        activeFilters.push(`Price ≥ $${filters.minPrice}`);
+      } else if (filters.maxPrice !== undefined) {
+        activeFilters.push(`Price ≤ $${filters.maxPrice}`);
+      }
     }
     
     
@@ -100,6 +108,11 @@ const SearchResults: React.FC<SearchResultsProps> = ({
     
     if (filters.inStockOnly) {
       activeFilters.push('In Stock');
+    }
+
+    if (filters.gender) {
+      const label = filters.gender === 'women' ? 'Women' : filters.gender === 'men' ? 'Men' : 'Unisex';
+      activeFilters.push(`Gender: ${label}`);
     }
     
     return activeFilters;

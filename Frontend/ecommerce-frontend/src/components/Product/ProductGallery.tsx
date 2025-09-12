@@ -80,6 +80,7 @@ const ProductGallery: React.FC<ProductGalleryProps> = ({
                 width="100%"
                 height="100%"
                 objectFit="cover"
+                objectPosition="center"
                 fallback={
                   <Box 
                     bg="gray.200" 
@@ -198,6 +199,7 @@ const ProductGallery: React.FC<ProductGalleryProps> = ({
                     src={image}
                     alt={`${productName} - Thumbnail ${index + 1}`}
                     objectFit="cover"
+                    objectPosition="center"
                     fallback={
                       <Box bg="gray.200" display="flex" alignItems="center" justifyContent="center">
                         <Box fontSize="xs" color="gray.500">

@@ -47,8 +47,8 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
   isLoading = false,
 }) => {
   const [localPriceRange, setLocalPriceRange] = useState([
-    filters.minPrice || priceRange.min,
-    filters.maxPrice || priceRange.max,
+    filters.minPrice ?? priceRange.min,
+    filters.maxPrice ?? priceRange.max,
   ]);
 
   const bgColor = useColorModeValue('white', 'gray.700');
@@ -56,8 +56,8 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
 
   useEffect(() => {
     setLocalPriceRange([
-      filters.minPrice || priceRange.min,
-      filters.maxPrice || priceRange.max,
+      filters.minPrice ?? priceRange.min,
+      filters.maxPrice ?? priceRange.max,
     ]);
   }, [filters.minPrice, filters.maxPrice, priceRange]);
 
@@ -137,7 +137,7 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
 
         <Divider />
 
-        <Accordion allowMultiple defaultIndex={[0, 1, 2, 3, 4]}>
+        <Accordion allowMultiple defaultIndex={[]}>
           {/* Category Filter */}
           <AccordionItem>
             <AccordionButton px={0}>
@@ -164,6 +164,28 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
             </AccordionPanel>
           </AccordionItem>
 
+          {/* Gender Filter */}
+          <AccordionItem>
+            <AccordionButton px={0}>
+              <Box flex="1" textAlign="left">
+                <Text fontWeight="medium">Gender</Text>
+              </Box>
+              <AccordionIcon />
+            </AccordionButton>
+            <AccordionPanel px={0}>
+              <Select
+                placeholder="All"
+                value={filters.gender || ''}
+                onChange={(e) => handleFilterChange('gender' as any, e.target.value || undefined)}
+                isDisabled={isLoading}
+              >
+                <option value="women">Women</option>
+                <option value="men">Men</option>
+                <option value="unisex">Unisex</option>
+              </Select>
+            </AccordionPanel>
+          </AccordionItem>
+
           {/* Price Range Filter */}
           <AccordionItem>
             <AccordionButton px={0}>
@@ -176,10 +198,10 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
               <VStack spacing={4} align="stretch">
                 <HStack justify="space-between">
                   <Text fontSize="sm" color="gray.600">
-                    ${localPriceRange[0]}
+                    {filters.minPrice !== undefined ? `$${localPriceRange[0]}` : 'Min'}
                   </Text>
                   <Text fontSize="sm" color="gray.600">
-                    ${localPriceRange[1]}
+                    {filters.maxPrice !== undefined ? `$${localPriceRange[1]}` : 'Max'}
                   </Text>
                 </HStack>
                 
@@ -204,7 +226,7 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
                     size="sm"
                     min={priceRange.min}
                     max={priceRange.max}
-                    value={localPriceRange[0]}
+                    value={filters.minPrice !== undefined ? localPriceRange[0] : ('' as any)}
                     onChange={(_, value) => {
                       if (!isNaN(value)) {
                         const newRange = [value, localPriceRange[1]];
@@ -227,7 +249,7 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
                     size="sm"
                     min={priceRange.min}
                     max={priceRange.max}
-                    value={localPriceRange[1]}
+                    value={filters.maxPrice !== undefined ? localPriceRange[1] : ('' as any)}
                     onChange={(_, value) => {
                       if (!isNaN(value)) {
                         const newRange = [localPriceRange[0], value];

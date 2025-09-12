@@ -200,6 +200,7 @@ const FeaturedCategories: React.FC<FeaturedCategoriesProps> = ({
                       width="100%"
                       height="100%"
                       objectFit="cover"
+                      objectPosition="center"
                       transition="transform 0.3s ease"
                       _hover={{ transform: 'scale(1.1)' }}
                       fallback={

@@ -57,6 +57,7 @@ import {
   FaExpandArrowsAlt,
 } from 'react-icons/fa';
 import { Product, Store } from '../../types';
+import { useNavigate } from 'react-router-dom';
 
 interface N11ProductDetailProps {
   product: Product;
@@ -90,6 +91,7 @@ const N11ProductDetail: React.FC<N11ProductDetailProps> = ({
   wishlistLoading = false,
 }) => {
   const { isOpen, onOpen, onClose } = useDisclosure();
+  const navigate = useNavigate();
   
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [quantity, setQuantity] = useState(1);
@@ -100,13 +102,22 @@ const N11ProductDetail: React.FC<N11ProductDetailProps> = ({
   const textColor = useColorModeValue('gray.600', 'gray.400');
   const mutedTextColor = useColorModeValue('gray.500', 'gray.500');
   
-  // Mock product images for gallery
-  const productImages = [
-    product.imageUrl,
-    product.imageUrl,
-    product.imageUrl,
-    product.imageUrl,
-  ];
+  // Derive product images (up to 4) from product.imageUrls or tags JSON; fallback to imageUrl
+  let derivedImages: string[] = [];
+  if (Array.isArray((product as any).imageUrls) && (product as any).imageUrls.length > 0) {
+    derivedImages = (product as any).imageUrls as string[];
+  } else if (product && (product as any).tags) {
+    try {
+      const tagsObj = JSON.parse((product as any).tags);
+      if (Array.isArray(tagsObj?.imageUrls)) {
+        derivedImages = tagsObj.imageUrls;
+      }
+    } catch {}
+  }
+  if (derivedImages.length === 0 && product.imageUrl) {
+    derivedImages = [product.imageUrl];
+  }
+  const productImages = Array.from(new Set(derivedImages.filter(Boolean))).slice(0, 4);
   
   // Mock variants for demo
   const mockVariants = {
@@ -124,7 +135,14 @@ const N11ProductDetail: React.FC<N11ProductDetailProps> = ({
   };
   
   const handleAddToCart = () => {
-    onAddToCart(quantity, selectedVariants);
+    let maxPerOrder: number | null = null;
+    try {
+      const tagsObj = (product as any).tags ? JSON.parse((product as any).tags) : null;
+      if (tagsObj && typeof tagsObj.maxPerOrder === 'number') maxPerOrder = tagsObj.maxPerOrder;
+    } catch {}
+    const allowed = Math.max(1, Math.min(product.stock, maxPerOrder ?? product.stock));
+    const q = Math.min(quantity, allowed);
+    onAddToCart(q, selectedVariants);
   };
   
   const handleWishlistToggle = () => {
@@ -185,6 +203,8 @@ const N11ProductDetail: React.FC<N11ProductDetailProps> = ({
               overflow="hidden"
               border="1px solid"
               borderColor={borderColor}
+              cursor="zoom-in"
+              onClick={onOpen}
             >
               <Image
                 src={productImages[selectedImageIndex]}
@@ -192,6 +212,7 @@ const N11ProductDetail: React.FC<N11ProductDetailProps> = ({
                 w="full"
                 h="full"
                 objectFit="cover"
+                objectPosition="center"
               />
               
               {/* Zoom Button */}
@@ -203,7 +224,7 @@ const N11ProductDetail: React.FC<N11ProductDetailProps> = ({
                 right={4}
                 size="sm"
                 bg="rgba(255,255,255,0.9)"
-                onClick={onOpen}
+                onClick={(e) => { e.stopPropagation(); onOpen(); }}
               />
               
               {/* Navigation Arrows */}
@@ -259,6 +280,7 @@ const N11ProductDetail: React.FC<N11ProductDetailProps> = ({
                     w="full"
                     h="full"
                     objectFit="cover"
+                    objectPosition="center"
                   />
                 </Box>
               ))}
@@ -347,7 +369,16 @@ const N11ProductDetail: React.FC<N11ProductDetailProps> = ({
                 value={quantity}
                 onChange={(_, value) => setQuantity(isNaN(value) ? 1 : value)}
                 min={1}
-                max={product.stock}
+                max={(function(){
+                  let maxPerOrder: number | null = null;
+                  try {
+                    const tagsObj = (product as any).tags ? JSON.parse((product as any).tags) : null;
+                    if (tagsObj && typeof tagsObj.maxPerOrder === 'number') {
+                      maxPerOrder = tagsObj.maxPerOrder;
+                    }
+                  } catch {}
+                  return Math.max(1, Math.min(product.stock, maxPerOrder ?? product.stock));
+                })()}
               >
                 <NumberInputField />
                 <NumberInputStepper>
@@ -419,7 +450,10 @@ const N11ProductDetail: React.FC<N11ProductDetailProps> = ({
                         </Text>
                       </HStack>
                     </VStack>
-                    <Button size="sm" variant="outline">
+                    <Button size="sm" variant="outline" onClick={() => {
+                      const targetId = product.storeId || store?.id;
+                      if (targetId) navigate(`/store/${targetId}`);
+                    }}>
                       Mağazayı Ziyaret Et
                     </Button>
                   </HStack>

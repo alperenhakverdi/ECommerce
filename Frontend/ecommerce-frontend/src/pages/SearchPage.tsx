@@ -42,6 +42,7 @@ const SearchPage: React.FC = () => {
   const [filters, setFilters] = useState<ProductSearchFilters>({
     searchTerm: searchParams.get('q') || undefined,
     categoryId: searchParams.get('category') || undefined,
+    gender: (searchParams.get('gender') as any) || undefined,
   });
   const [sortBy, setSortBy] = useState<ProductSortField>('name');
   const [sortDirection, setSortDirection] = useState<ProductSortDirection>('asc');
@@ -73,8 +74,9 @@ const SearchPage: React.FC = () => {
     const params = new URLSearchParams();
     if (filters.searchTerm) params.set('q', filters.searchTerm);
     if (filters.categoryId) params.set('category', filters.categoryId);
+    if (filters.gender) params.set('gender', filters.gender);
     setSearchParams(params, { replace: true });
-  }, [filters.searchTerm, filters.categoryId, setSearchParams]);
+  }, [filters.searchTerm, filters.categoryId, filters.gender, setSearchParams]);
 
   const loadFilterMetadata = async () => {
     try {
@@ -222,19 +224,20 @@ const SearchPage: React.FC = () => {
                 </HStack>
               )}
 
-              <SearchResults
-                searchResponse={searchResponse}
-                filters={filters}
-                sortBy={sortBy}
-                sortDirection={sortDirection}
-                onSortChange={handleSortChange}
-                onLoadMore={handleLoadMore}
-                isLoading={isLoading}
-                isLoadingMore={isLoadingMore}
-                availableCategories={availableCategories}
-                availableStores={availableStores}
-                priceRange={priceRange}
-              />
+          <SearchResults
+            searchResponse={searchResponse}
+            filters={filters}
+            sortBy={sortBy}
+            sortDirection={sortDirection}
+            onSortChange={handleSortChange}
+            onLoadMore={handleLoadMore}
+            isLoading={isLoading}
+            isLoadingMore={isLoadingMore}
+            availableCategories={availableCategories}
+            availableStores={availableStores}
+            priceRange={priceRange}
+            pageSize={pageSize}
+          />
             </VStack>
           </GridItem>
         </Grid>

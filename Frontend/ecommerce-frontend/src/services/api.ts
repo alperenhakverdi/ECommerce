@@ -73,6 +73,7 @@ export const productsApi = {
     if (searchRequest.minPrice !== undefined) params.append('minPrice', searchRequest.minPrice.toString());
     if (searchRequest.maxPrice !== undefined) params.append('maxPrice', searchRequest.maxPrice.toString());
     if (searchRequest.inStockOnly !== undefined) params.append('inStockOnly', searchRequest.inStockOnly.toString());
+    if ((searchRequest as any).gender) params.append('gender', (searchRequest as any).gender);
     if (searchRequest.page) params.append('page', searchRequest.page.toString());
     if (searchRequest.pageSize) params.append('pageSize', searchRequest.pageSize.toString());
     if (searchRequest.sortBy) params.append('sortBy', searchRequest.sortBy);
@@ -250,6 +251,10 @@ export const storesApi = {
   // Store orders (store owner only)
   getOrders: (id: string, page?: number, pageSize?: number) => 
     api.get<Order[]>(`/stores/${id}/orders${page ? `?page=${page}&pageSize=${pageSize || 20}` : ''}`),
+  
+  // Update order status for a store's order (store owner/admin)
+  updateOrderStatus: (storeId: string, orderId: string, status: number) => 
+    api.patch(`/stores/${storeId}/orders/${orderId}/status`, { status }),
   
   // Store application (for becoming a store owner)
   applyToBecomeStore: (application: any) => 

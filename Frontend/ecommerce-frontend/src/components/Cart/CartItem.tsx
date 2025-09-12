@@ -55,6 +55,7 @@ const CartItem: React.FC<CartItemProps> = ({ item }) => {
           alt={item.productName}
           boxSize={{ base: '100%', md: '100px' }}
           objectFit="cover"
+          objectPosition="center"
           borderRadius="md"
           fallbackSrc="https://via.placeholder.com/100x100?text=No+Image"
         />

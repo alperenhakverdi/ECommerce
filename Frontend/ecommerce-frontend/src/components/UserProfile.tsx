@@ -250,7 +250,8 @@ export const UserProfile: React.FC = () => {
         {/* Role-specific Quick Stats */}
         {user.roles.includes('Admin') && <AdminDashboard />}
         {user.roles.includes('StoreOwner') && <StoreOwnerDashboard />}
-        {user.roles.includes('Customer') && <CustomerDashboard />}
+        {/* Show Customer dashboard only if user is not a store owner */}
+        {!user.roles.includes('StoreOwner') && user.roles.includes('Customer') && <CustomerDashboard />}
 
         {/* Profile Information Card */}
         <Card>
@@ -267,11 +268,17 @@ export const UserProfile: React.FC = () => {
                 </Text>
                 <Text color="gray.600">{user.email}</Text>
                 <HStack spacing={2}>
-                  {user.roles.map((role) => (
-                    <Badge key={role} colorScheme={getRoleColor()} variant="subtle">
-                      {role}
-                    </Badge>
-                  ))}
+                  {(() => {
+                    const roles = user.roles || [];
+                    const display = roles.includes('StoreOwner')
+                      ? roles.filter(r => r !== 'Customer')
+                      : roles;
+                    return display.map((role) => (
+                      <Badge key={role} colorScheme={getRoleColor()} variant="subtle">
+                        {role}
+                      </Badge>
+                    ));
+                  })()}
                 </HStack>
               </VStack>
             </HStack>

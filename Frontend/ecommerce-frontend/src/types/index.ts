@@ -299,6 +299,7 @@ export interface ProductSearchFilters {
   maxPrice?: number;
   inStockOnly?: boolean;
   storeId?: string;
+  gender?: 'women' | 'men' | 'unisex';
 }
 
 export type ProductSortField = 'name' | 'price' | 'created' | 'popularity';

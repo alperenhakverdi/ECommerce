@@ -293,6 +293,7 @@ const EnhancedProductCard: React.FC<ProductCardProps> = ({ product, onClick }) =
             src={product.imageUrl}
             alt={product.name}
             objectFit="cover"
+            objectPosition="center"
             h="220px"
             w="100%"
             transition="transform 0.3s ease"

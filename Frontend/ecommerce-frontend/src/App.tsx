@@ -14,6 +14,7 @@ import HomePage from './pages/HomePage';
 import CartPage from './pages/CartPage';
 import CheckoutPage from './pages/CheckoutPage';
 import UserProfilePage from './pages/UserProfilePage';
+import StoreSettingsPage from './pages/StoreSettingsPage';
 import OrdersPage from './pages/OrdersPage';
 import OrderDetailsPage from './pages/OrderDetailsPage';
 import OrderTrackRedirect from './pages/OrderTrackRedirect';
@@ -60,6 +61,7 @@ function App() {
                   <Route path="/profile" element={<UserProfilePage />} />
                   <Route path="/hesabim" element={<UserProfilePage />} />
                   <Route path="/profile/notifications" element={<NotificationsPage />} />
+                  <Route path="/profile/store-settings" element={<StoreSettingsPage />} />
                   <Route path="/profile/security" element={<SecuritySettingsPage />} />
                   <Route path="/saved-cards" element={<SavedCardsPage />} />
                   <Route path="/wishlist" element={<WishlistPage />} />

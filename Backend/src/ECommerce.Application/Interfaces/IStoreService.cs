@@ -38,4 +38,8 @@ public interface IStoreService
     Task<bool> HasActiveProductsAsync(Guid storeId);
     Task<IEnumerable<ProductDto>> GetProductsAsync(Guid storeId, int page = 1, int pageSize = 50);
     Task<ProductDto> CreateProductAsync(Guid storeId, CreateProductDto createProductDto);
+
+    // Store orders (for store owners/admin)
+    Task<IEnumerable<OrderDto>> GetStoreOrdersAsync(Guid storeId, int page = 1, int pageSize = 50);
+    Task<bool> CanStoreManageOrderAsync(Guid storeId, Guid orderId);
 }

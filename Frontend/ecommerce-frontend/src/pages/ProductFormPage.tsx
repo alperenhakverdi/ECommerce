@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   Box,
   Container,
   VStack,
   HStack,
+  SimpleGrid,
   Text,
   Button,
   FormControl,
@@ -22,8 +23,9 @@ import {
   useColorModeValue,
   Icon,
   AspectRatio,
+  IconButton,
 } from '@chakra-ui/react';
-import { FiArrowLeft, FiUpload, FiSave } from 'react-icons/fi';
+import { FiArrowLeft, FiUpload, FiSave, FiPlus, FiX } from 'react-icons/fi';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
 import { productsApi, storesApi, uploadsApi } from '../services/api';
@@ -37,6 +39,9 @@ interface ProductFormData {
   stock: number;
   images: string[];
   imageUrl: string;
+  imageUrls: string[];
+  maxPerOrder: number;
+  gender?: 'women' | 'men' | 'unisex' | '';
 }
 
 const ProductFormPage: React.FC = () => {
@@ -53,11 +58,15 @@ const ProductFormPage: React.FC = () => {
     stock: 0,
     images: [],
     imageUrl: '',
+    imageUrls: [],
+    maxPerOrder: 10,
+    gender: '',
   });
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [imagePreview, setImagePreview] = useState<string>('');
+  const [previewUrls, setPreviewUrls] = useState<string[]>([]); // local previews for immediate UX
   const [userStores, setUserStores] = useState<any[]>([]);
   const [selectedStoreId, setSelectedStoreId] = useState<string>('');
   const [categories, setCategories] = useState<any[]>([]);
@@ -67,7 +76,7 @@ const ProductFormPage: React.FC = () => {
   const bgColor = useColorModeValue('white', 'gray.800');
   const borderColor = useColorModeValue('gray.200', 'gray.600');
 
-  const loadUserStores = async () => {
+  const loadUserStores = useCallback(async () => {
     try {
       const response = await storesApi.getMyStores();
       setUserStores(response.data);
@@ -83,22 +92,25 @@ const ProductFormPage: React.FC = () => {
         duration: 4000,
       });
     }
-  };
+  }, [toast]);
 
-  const loadCategories = async () => {
+  const loadCategories = useCallback(async () => {
     try {
       const response = await fetch('http://localhost:5133/api/categories');
       const data = await response.json();
       setCategories(data);
-      if (Array.isArray(data) && data.length > 0 && !formData.category) {
-        setFormData(prev => ({ ...prev, category: data[0].id }));
-      }
+      setFormData(prev => {
+        if (Array.isArray(data) && data.length > 0 && !prev.category) {
+          return { ...prev, category: data[0].id };
+        }
+        return prev;
+      });
     } catch (error) {
       console.error('Failed to load categories:', error);
     }
-  };
+  }, []);
 
-  const loadProductForEdit = async (productId: string) => {
+  const loadProductForEdit = useCallback(async (productId: string) => {
     try {
       const response = await productsApi.getById(productId);
       const p = response.data;
@@ -109,15 +121,40 @@ const ProductFormPage: React.FC = () => {
         price: p.price || 0,
         category: p.categoryId || '',
         stock: p.stock || 0,
-        imageUrl: p.imageUrl || ''
+        imageUrl: p.imageUrl || '',
+        imageUrls: (() => {
+          // Prefer p.imageUrls; fallback to tags JSON
+          const arr = (p as any).imageUrls as string[] | undefined;
+          if (Array.isArray(arr) && arr.length > 0) return arr.slice(0,4);
+          try {
+            const tagsObj = (p as any).tags ? JSON.parse((p as any).tags) : null;
+            if (tagsObj && Array.isArray(tagsObj.imageUrls)) return tagsObj.imageUrls.slice(0,4);
+          } catch {}
+          return p.imageUrl ? [p.imageUrl] : [];
+        })(),
+        maxPerOrder: (() => {
+          try {
+            const tagsObj = (p as any).tags ? JSON.parse((p as any).tags) : null;
+            if (tagsObj && typeof tagsObj.maxPerOrder === 'number') return tagsObj.maxPerOrder;
+          } catch {}
+          return 10;
+        })(),
+        gender: (() => {
+          try {
+            const tagsObj = (p as any).tags ? JSON.parse((p as any).tags) : null;
+            if (tagsObj && typeof tagsObj.gender === 'string') return tagsObj.gender as any;
+          } catch {}
+          return '' as any;
+        })()
       }));
       if (p.storeId) setSelectedStoreId(p.storeId);
-      if (p.imageUrl) setImagePreview(p.imageUrl);
+      const preview = (p as any).imageUrls?.[0] || (p as any).imageUrl || '';
+      if (preview) setImagePreview(preview);
     } catch (error) {
       console.error('Failed to load product for edit:', error);
       toast({ title: 'Error', description: 'Failed to load product.', status: 'error', duration: 4000 });
     }
-  };
+  }, [toast]);
 
   // Load user stores and redirect if not authenticated
   React.useEffect(() => {
@@ -130,7 +167,7 @@ const ProductFormPage: React.FC = () => {
         loadProductForEdit(editProductId);
       }
     }
-  }, [user, isLoading, navigate, loadUserStores, loadCategories, isEditMode, editProductId]);
+  }, [user, isLoading, navigate, loadUserStores, loadCategories, isEditMode, editProductId, loadProductForEdit]);
 
   const handleInputChange = (field: keyof ProductFormData, value: any) => {
     setFormData(prev => ({
@@ -139,27 +176,100 @@ const ProductFormPage: React.FC = () => {
     }));
   };
 
-  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      // Preview locally
-      const reader = new FileReader();
-      reader.onloadend = () => setImagePreview(reader.result as string);
-      reader.readAsDataURL(file);
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files || []);
+    if (files.length === 0) return;
 
-      // Upload to backend and set URL
-      setIsUploadingImage(true);
-      uploadsApi.uploadImage(file)
-        .then(res => {
-          const url = res.data?.url || '';
-          setFormData(prev => ({ ...prev, imageUrl: url }));
-          // Replace preview with hosted URL when available
-          if (url) setImagePreview(url);
+    const limited = files.slice(0, 4);
+    // Show local previews immediately
+    const localPreviews = limited.map((f) => URL.createObjectURL(f));
+    setPreviewUrls((prev) => Array.from(new Set([...prev, ...localPreviews])).slice(0, 4));
+    if (!imagePreview && localPreviews[0]) setImagePreview(localPreviews[0]);
+    setIsUploadingImage(true);
+    try {
+      const uploads = await Promise.all(
+        limited.map(async (file) => {
+          try {
+            const res = await uploadsApi.uploadImage(file);
+            return res.data?.url as string;
+          } catch (e) {
+            return '';
+          }
         })
-        .catch(() => {
-          toast({ title: 'Image upload failed', description: 'You can paste an image URL instead.', status: 'warning', duration: 4000 });
-        })
-        .finally(() => setIsUploadingImage(false));
+      );
+      const urls = uploads.filter(Boolean);
+      setFormData(prev => {
+        const merged = Array.from(new Set([...(prev.imageUrls || []), ...urls])).slice(0, 4);
+        // Set primary imageUrl for backward-compat
+        if (!prev.imageUrl && merged[0]) setImagePreview(merged[0]);
+        return { ...prev, imageUrls: merged, imageUrl: prev.imageUrl || merged[0] || '' };
+      });
+      if (!imagePreview && urls[0]) setImagePreview(urls[0]);
+    } finally {
+      setIsUploadingImage(false);
+      // Allow selecting the same file again by resetting the input
+      try { (event.target as HTMLInputElement).value = ''; } catch {}
+    }
+  };
+
+  const handleSlotImageUpload = async (index: number, event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = (event.target.files && event.target.files[0]) || null;
+    if (!file) return;
+    const localUrl = URL.createObjectURL(file);
+    setPreviewUrls(prev => {
+      const arr = [...(prev || [])];
+      while (arr.length < 4) arr.push('');
+      arr[index] = localUrl;
+      return arr.slice(0,4);
+    });
+    if (!imagePreview) setImagePreview(localUrl);
+
+    setIsUploadingImage(true);
+    try {
+      const res = await uploadsApi.uploadImage(file);
+      const url = res.data?.url || '';
+      if (!url) return;
+      setFormData(prev => {
+        const arr = [...(prev.imageUrls || [])];
+        while (arr.length < 4) arr.push('');
+        arr[index] = url;
+        const imageUrl = prev.imageUrl || url;
+        return { ...prev, imageUrls: arr.slice(0,4), imageUrl };
+      });
+      setImagePreview(url);
+    } finally {
+      setIsUploadingImage(false);
+      try { (event.target as HTMLInputElement).value = ''; } catch {}
+    }
+  };
+
+  const handleRemoveImageSlot = (index: number) => {
+    setFormData(prev => {
+      const newUrls = [...(prev.imageUrls || [])];
+      while (newUrls.length < 4) newUrls.push('');
+      const removedUrl = newUrls[index];
+      newUrls[index] = '';
+      // determine a new primary url if needed
+      let nextPrimary = prev.imageUrl;
+      if (removedUrl && (prev.imageUrl === removedUrl)) {
+        nextPrimary = newUrls.find(u => !!u) || '';
+      }
+      return { ...prev, imageUrls: newUrls, imageUrl: nextPrimary };
+    });
+    setPreviewUrls(prev => {
+      const arr = [...(prev || [])];
+      while (arr.length < 4) arr.push('');
+      const removedPrev = arr[index];
+      arr[index] = '';
+      // update imagePreview if pointing to removed
+      if (imagePreview && (imagePreview === removedPrev)) {
+        const next = (arr.find(u => !!u) || '');
+        setImagePreview(next);
+      }
+      return arr;
+    });
+    if (imagePreview && imagePreview === formData.imageUrl && !formData.imageUrls.find(u => !!u)) {
+      setImagePreview('');
     }
   };
 
@@ -241,12 +351,12 @@ const ProductFormPage: React.FC = () => {
         basePrice: formData.price,  // Backend expects basePrice
         price: formData.price,      // Used by backend for creation
         stock: formData.stock,
-        imageUrl: formData.imageUrl?.trim() || '',
+        imageUrl: (formData.imageUrl?.trim() || formData.imageUrls[0] || ''),
         categoryId: formData.category,  // Must be a valid GUID string
         // storeId will be set by the backend from URL parameter
         hasVariants: false,
         weight: 0,
-        tags: null,
+        tags: JSON.stringify({ imageUrls: (formData.imageUrls || []).slice(0,4), maxPerOrder: formData.maxPerOrder || 1, gender: (formData.gender || '').toLowerCase() || undefined }),
         variants: []
       };
 
@@ -419,6 +529,20 @@ const ProductFormPage: React.FC = () => {
                 </Select>
               </FormControl>
 
+              {/* Gender */}
+              <FormControl>
+                <FormLabel>Gender</FormLabel>
+                <Select
+                  value={formData.gender || ''}
+                  onChange={(e) => handleInputChange('gender', (e.target.value || '') as any)}
+                  placeholder="All / Not specified"
+                >
+                  <option value="women">Women</option>
+                  <option value="men">Men</option>
+                  <option value="unisex">Unisex</option>
+                </Select>
+              </FormControl>
+
               {/* Store Selection */}
               <FormControl isRequired>
                 <FormLabel>Store</FormLabel>
@@ -447,11 +571,12 @@ const ProductFormPage: React.FC = () => {
 
               {/* Image Upload */}
               <FormControl>
-                <FormLabel>Product Image</FormLabel>
+                <FormLabel>Product Images (max 4)</FormLabel>
                 <VStack spacing={4} align="stretch">
                   <Input
                     type="file"
                     accept="image/*"
+                    multiple
                     onChange={handleImageUpload}
                     display="none"
                     id="image-upload"
@@ -463,22 +588,93 @@ const ProductFormPage: React.FC = () => {
                     variant="outline"
                     cursor="pointer"
                   >
-                    Upload Image
+                    Upload Images
                   </Button>
-                  
-                  {(imagePreview || formData.imageUrl) && (
+                  {/* 4-slot grid with plus or thumbnail (rectangular) */}
+                  <SimpleGrid columns={4} gap={3}>
+                    {Array.from({ length: 4 }).map((_, idx) => {
+                      const slotUrl = (formData.imageUrls[idx] || previewUrls[idx] || '');
+                      const inputId = `image-upload-slot-${idx}`;
+                      return (
+                        <Box key={idx}>
+                          <Input
+                            type="file"
+                            accept="image/*"
+                            display="none"
+                            id={inputId}
+                            onChange={(e) => handleSlotImageUpload(idx, e)}
+                          />
+                          <Box
+                            w="120px"
+                            h="80px"
+                            border="2px dashed"
+                            borderColor={borderColor}
+                            borderRadius="md"
+                            overflow="hidden"
+                            position="relative"
+                            cursor="pointer"
+                            onClick={() => {
+                              if (slotUrl) {
+                                setImagePreview(slotUrl);
+                              } else {
+                                const el = document.getElementById(inputId) as HTMLInputElement | null;
+                                el?.click();
+                              }
+                            }}
+                          >
+                            {slotUrl && (
+                              <IconButton
+                                aria-label="Remove image"
+                                icon={<FiX />}
+                                size="xs"
+                                position="absolute"
+                                top={1}
+                                right={1}
+                                zIndex={1}
+                                onClick={(e) => { e.stopPropagation(); handleRemoveImageSlot(idx); }}
+                              />
+                            )}
+                            {slotUrl ? (
+                              <Image src={slotUrl} alt={`Image ${idx + 1}`} w="100%" h="100%" objectFit="cover" objectPosition="center" />
+                            ) : (
+                              <VStack w="100%" h="100%" align="center" justify="center">
+                                <Icon as={FiPlus} boxSize={6} color="gray.400" />
+                                <Text fontSize="xs" color="gray.500">Add</Text>
+                              </VStack>
+                            )}
+                          </Box>
+                        </Box>
+                      );
+                    })}
+                  </SimpleGrid>
+
+                  {(formData.imageUrls.length > 0 || previewUrls.length > 0 || imagePreview || formData.imageUrl) && (
                     <AspectRatio ratio={16/9} maxW="300px">
                       <Image
-                        src={imagePreview || formData.imageUrl}
+                        src={imagePreview || formData.imageUrl || (formData.imageUrls[0] || previewUrls[0] || '')}
                         alt="Product preview"
                         borderRadius="md"
                         objectFit="cover"
+                        objectPosition="center"
                         border="1px"
                         borderColor={borderColor}
                       />
                     </AspectRatio>
                   )}
                 </VStack>
+              </FormControl>
+
+              {/* Max Per Order */}
+              <FormControl isRequired>
+                <FormLabel>Max Per Order (per customer)</FormLabel>
+                <NumberInput
+                  value={formData.maxPerOrder}
+                  onChange={(valueString) => handleInputChange('maxPerOrder', Math.max(1, parseInt(valueString) || 1))}
+                  min={1}
+                  max={formData.stock || 999999}
+                >
+                  <NumberInputField />
+                </NumberInput>
               </FormControl>
 
               {/* Submit Button */}

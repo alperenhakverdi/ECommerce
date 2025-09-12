@@ -136,6 +136,7 @@ const StorePage: React.FC = () => {
                   width="100%"
                   height="100%"
                   objectFit="cover"
+                  objectPosition="center"
                   fallback={<Box height="100%" bg="gray.200" />}
                 />
               </Box>

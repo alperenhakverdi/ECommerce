@@ -36,7 +36,8 @@ public class ProductService : IProductService
                 CategoryName = p.Category.Name,
                 IsActive = p.IsActive,
                 StoreId = p.StoreId,
-                StoreName = p.Store != null ? p.Store.Name : "Direct Sale"
+                StoreName = p.Store != null ? p.Store.Name : "Direct Sale",
+                Tags = p.Tags
             })
             .ToListAsync();
 
@@ -61,7 +62,8 @@ public class ProductService : IProductService
                 CategoryName = p.Category.Name,
                 IsActive = p.IsActive,
                 StoreId = p.StoreId,
-                StoreName = p.Store != null ? p.Store.Name : "Direct Sale"
+                StoreName = p.Store != null ? p.Store.Name : "Direct Sale",
+                Tags = p.Tags
             })
             .FirstOrDefaultAsync();
 
@@ -83,7 +85,8 @@ public class ProductService : IProductService
                 ImageUrl = p.ImageUrl,
                 CategoryId = p.CategoryId,
                 CategoryName = p.Category.Name,
-                IsActive = p.IsActive
+                IsActive = p.IsActive,
+                Tags = p.Tags
             })
             .ToListAsync();
 
@@ -101,6 +104,7 @@ public class ProductService : IProductService
             ImageUrl = createProductDto.ImageUrl,
             CategoryId = createProductDto.CategoryId,
             StoreId = createProductDto.StoreId,
+            Tags = createProductDto.Tags,
             IsActive = true
         };
 
@@ -122,7 +126,8 @@ public class ProductService : IProductService
             CategoryName = category?.Name ?? "",
             IsActive = product.IsActive,
             StoreId = product.StoreId.HasValue && product.StoreId != Guid.Empty ? product.StoreId : null,
-            StoreName = store?.Name ?? "Direct Sale"
+            StoreName = store?.Name ?? "Direct Sale",
+            Tags = product.Tags
         };
     }
 
@@ -232,6 +237,15 @@ public class ProductService : IProductService
             query = query.Where(p => p.Stock > 0);
         }
 
+        // Gender filter via Tags JSON (stored as string)
+        if (!string.IsNullOrWhiteSpace(request.Gender))
+        {
+            var g = request.Gender.Trim().ToLower();
+            // Match a simple JSON substring pattern: "gender":"women|men|unisex"
+            var pattern = $"\"gender\":\"{g}\"";
+            query = query.Where(p => p.Tags != null && p.Tags.Contains(pattern));
+        }
+
         // Get total count before pagination
         var totalCount = await query.CountAsync();
 
@@ -267,7 +281,8 @@ public class ProductService : IProductService
             ImageUrl = p.ImageUrl,
             CategoryId = p.CategoryId,
             CategoryName = p.Category.Name,
-            IsActive = p.IsActive
+            IsActive = p.IsActive,
+            Tags = p.Tags
         }).ToListAsync();
 
         var totalPages = (int)Math.Ceiling((double)totalCount / request.PageSize);

@@ -228,6 +228,7 @@ const WishlistPage: React.FC = () => {
                           src={item.productImageUrl}
                           alt={item.productName}
                           objectFit="cover"
+                          objectPosition="center"
                           h="200px"
                           w="100%"
                           fallback={<Box bg="gray.100" h="200px" w="100%" />}

@@ -29,7 +29,7 @@ import { useStoreData } from '../hooks/useStoreData';
 import { StatsTab } from '../components/Dashboard/StatsTab';
 import { ProductsTab } from '../components/Dashboard/ProductsTab';
 import { OrdersTab } from '../components/Dashboard/OrdersTab';
-import { SettingsTab } from '../components/Dashboard/SettingsTab';
+// Removed SettingsTab from dashboard; available under Profile > Store Settings
 
 // Store Application Form
 import StoreApplicationForm from '../components/Store/StoreApplicationForm';
@@ -63,18 +63,15 @@ const StoreDashboardContent: React.FC = React.memo(() => {
   // Handle order status update
   const handleUpdateOrderStatus = useCallback(async (orderId: string, newStatus: OrderStatus) => {
     try {
-      // TODO: Implement actual API call
-      // await storesApi.updateOrderStatus(orderId, newStatus);
-      
-      // For now, just refresh orders data to reflect the change
+      if (!state.selectedStore) throw new Error('No store selected');
+      await storesApi.updateOrderStatus(state.selectedStore.id, orderId, Number(newStatus));
       await refreshData('orders');
-      
       console.log(`Order ${orderId} status updated to ${newStatus}`);
     } catch (error) {
       console.error('Failed to update order status:', error);
       throw error; // Re-throw to let the component handle the error
     }
-  }, [refreshData]);
+  }, [refreshData, state.selectedStore]);
 
   // Handle store information update
   const handleUpdateStore = useCallback(async (storeId: string, data: Partial<Store>) => {
@@ -132,15 +129,7 @@ const StoreDashboardContent: React.FC = React.memo(() => {
           />
         </TabPanel>
 
-        {/* Settings Tab */}
-        <TabPanel p={0}>
-          <SettingsTab
-            store={state.selectedStore}
-            loading={false}
-            error={null}
-            onUpdateStore={handleUpdateStore}
-          />
-        </TabPanel>
+        
       </TabPanels>
     );
   }, [
@@ -211,16 +200,7 @@ const StoreDashboardContent: React.FC = React.memo(() => {
           >
             {t('store.dashboard.orders')}
           </Tab>
-          <Tab 
-            _selected={{ 
-              color: 'blue.600', 
-              borderColor: 'blue.600',
-              bg: 'blue.50' 
-            }}
-            transition="all 0.2s ease"
-          >
-            {t('store.dashboard.settings')}
-          </Tab>
+          
         </TabList>
 
         {tabPanels}
