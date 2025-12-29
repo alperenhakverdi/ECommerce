@@ -1,20 +1,20 @@
 {
   "format": 1,
   "restore": {
-    "/home/wsl-alpdev/ECommerce/Backend/src/ECommerce.API/ECommerce.API.csproj": {}
+    "/home/runner/work/ECommerce/ECommerce/Backend/src/ECommerce.API/ECommerce.API.csproj": {}
   },
   "projects": {
-    "/home/wsl-alpdev/ECommerce/Backend/src/ECommerce.API/ECommerce.API.csproj": {
+    "/home/runner/work/ECommerce/ECommerce/Backend/src/ECommerce.API/ECommerce.API.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "/home/wsl-alpdev/ECommerce/Backend/src/ECommerce.API/ECommerce.API.csproj",
+        "projectUniqueName": "/home/runner/work/ECommerce/ECommerce/Backend/src/ECommerce.API/ECommerce.API.csproj",
         "projectName": "ECommerce.API",
-        "projectPath": "/home/wsl-alpdev/ECommerce/Backend/src/ECommerce.API/ECommerce.API.csproj",
-        "packagesPath": "/home/wsl-alpdev/.nuget/packages/",
-        "outputPath": "/home/wsl-alpdev/ECommerce/Backend/src/ECommerce.API/obj/",
+        "projectPath": "/home/runner/work/ECommerce/ECommerce/Backend/src/ECommerce.API/ECommerce.API.csproj",
+        "packagesPath": "/home/runner/.nuget/packages/",
+        "outputPath": "/home/runner/work/ECommerce/ECommerce/Backend/src/ECommerce.API/obj/",
         "projectStyle": "PackageReference",
         "configFilePaths": [
-          "/home/wsl-alpdev/.nuget/NuGet/NuGet.Config"
+          "/home/runner/.nuget/NuGet/NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net8.0"
@@ -26,11 +26,11 @@
           "net8.0": {
             "targetAlias": "net8.0",
             "projectReferences": {
-              "/home/wsl-alpdev/ECommerce/Backend/src/ECommerce.Application/ECommerce.Application.csproj": {
-                "projectPath": "/home/wsl-alpdev/ECommerce/Backend/src/ECommerce.Application/ECommerce.Application.csproj"
+              "/home/runner/work/ECommerce/ECommerce/Backend/src/ECommerce.Application/ECommerce.Application.csproj": {
+                "projectPath": "/home/runner/work/ECommerce/ECommerce/Backend/src/ECommerce.Application/ECommerce.Application.csproj"
               },
-              "/home/wsl-alpdev/ECommerce/Backend/src/ECommerce.Infrastructure/ECommerce.Infrastructure.csproj": {
-                "projectPath": "/home/wsl-alpdev/ECommerce/Backend/src/ECommerce.Infrastructure/ECommerce.Infrastructure.csproj"
+              "/home/runner/work/ECommerce/ECommerce/Backend/src/ECommerce.Infrastructure/ECommerce.Infrastructure.csproj": {
+                "projectPath": "/home/runner/work/ECommerce/ECommerce/Backend/src/ECommerce.Infrastructure/ECommerce.Infrastructure.csproj"
               }
             }
           }
@@ -39,7 +39,13 @@
           "warnAsError": [
             "NU1605"
           ]
-        }
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        },
+        "SdkAnalysisLevel": "10.0.100"
       },
       "frameworks": {
         "net8.0": {
@@ -47,11 +53,11 @@
           "dependencies": {
             "Asp.Versioning.Http": {
               "target": "Package",
-              "version": "[8.1.0, )"
+              "version": "[8.1.1, )"
             },
             "Asp.Versioning.Mvc.ApiExplorer": {
               "target": "Package",
-              "version": "[8.1.0, )"
+              "version": "[8.1.1, )"
             },
             "AspNetCoreRateLimit": {
               "target": "Package",
@@ -63,25 +69,25 @@
             },
             "Microsoft.AspNetCore.Authentication.JwtBearer": {
               "target": "Package",
-              "version": "[8.0.8, )"
+              "version": "[8.0.22, )"
             },
             "Microsoft.AspNetCore.OpenApi": {
               "target": "Package",
-              "version": "[8.0.8, )"
+              "version": "[8.0.22, )"
             },
             "Microsoft.EntityFrameworkCore.Design": {
               "include": "Runtime, Build, Native, ContentFiles, Analyzers, BuildTransitive",
               "suppressParent": "All",
               "target": "Package",
-              "version": "[9.0.8, )"
+              "version": "[9.0.11, )"
             },
             "Microsoft.Extensions.Diagnostics.HealthChecks": {
               "target": "Package",
-              "version": "[9.0.8, )"
+              "version": "[9.0.11, )"
             },
             "Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore": {
               "target": "Package",
-              "version": "[8.0.8, )"
+              "version": "[8.0.22, )"
             },
             "Serilog.AspNetCore": {
               "target": "Package",
@@ -97,7 +103,7 @@
             },
             "Serilog.Sinks.Console": {
               "target": "Package",
-              "version": "[6.0.0, )"
+              "version": "[6.1.1, )"
             },
             "Serilog.Sinks.File": {
               "target": "Package",
@@ -105,7 +111,7 @@
             },
             "Swashbuckle.AspNetCore": {
               "target": "Package",
-              "version": "[6.4.0, )"
+              "version": "[6.9.0, )"
             }
           },
           "imports": [
@@ -127,21 +133,21 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "/usr/lib/dotnet/sdk/8.0.119/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "/usr/share/dotnet/sdk/10.0.101/PortableRuntimeIdentifierGraph.json"
         }
       }
     },
-    "/home/wsl-alpdev/ECommerce/Backend/src/ECommerce.Application/ECommerce.Application.csproj": {
+    "/home/runner/work/ECommerce/ECommerce/Backend/src/ECommerce.Application/ECommerce.Application.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "/home/wsl-alpdev/ECommerce/Backend/src/ECommerce.Application/ECommerce.Application.csproj",
+        "projectUniqueName": "/home/runner/work/ECommerce/ECommerce/Backend/src/ECommerce.Application/ECommerce.Application.csproj",
         "projectName": "ECommerce.Application",
-        "projectPath": "/home/wsl-alpdev/ECommerce/Backend/src/ECommerce.Application/ECommerce.Application.csproj",
-        "packagesPath": "/home/wsl-alpdev/.nuget/packages/",
-        "outputPath": "/home/wsl-alpdev/ECommerce/Backend/src/ECommerce.Application/obj/",
+        "projectPath": "/home/runner/work/ECommerce/ECommerce/Backend/src/ECommerce.Application/ECommerce.Application.csproj",
+        "packagesPath": "/home/runner/.nuget/packages/",
+        "outputPath": "/home/runner/work/ECommerce/ECommerce/Backend/src/ECommerce.Application/obj/",
         "projectStyle": "PackageReference",
         "configFilePaths": [
-          "/home/wsl-alpdev/.nuget/NuGet/NuGet.Config"
+          "/home/runner/.nuget/NuGet/NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net8.0"
@@ -153,8 +159,8 @@
           "net8.0": {
             "targetAlias": "net8.0",
             "projectReferences": {
-              "/home/wsl-alpdev/ECommerce/Backend/src/ECommerce.Domain/ECommerce.Domain.csproj": {
-                "projectPath": "/home/wsl-alpdev/ECommerce/Backend/src/ECommerce.Domain/ECommerce.Domain.csproj"
+              "/home/runner/work/ECommerce/ECommerce/Backend/src/ECommerce.Domain/ECommerce.Domain.csproj": {
+                "projectPath": "/home/runner/work/ECommerce/ECommerce/Backend/src/ECommerce.Domain/ECommerce.Domain.csproj"
               }
             }
           }
@@ -163,7 +169,13 @@
           "warnAsError": [
             "NU1605"
           ]
-        }
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        },
+        "SdkAnalysisLevel": "10.0.100"
       },
       "frameworks": {
         "net8.0": {
@@ -171,7 +183,7 @@
           "dependencies": {
             "FluentValidation": {
               "target": "Package",
-              "version": "[12.0.0, )"
+              "version": "[12.1.1, )"
             }
           },
           "imports": [
@@ -190,21 +202,21 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "/usr/lib/dotnet/sdk/8.0.119/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "/usr/share/dotnet/sdk/10.0.101/PortableRuntimeIdentifierGraph.json"
         }
       }
     },
-    "/home/wsl-alpdev/ECommerce/Backend/src/ECommerce.Domain/ECommerce.Domain.csproj": {
+    "/home/runner/work/ECommerce/ECommerce/Backend/src/ECommerce.Domain/ECommerce.Domain.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "/home/wsl-alpdev/ECommerce/Backend/src/ECommerce.Domain/ECommerce.Domain.csproj",
+        "projectUniqueName": "/home/runner/work/ECommerce/ECommerce/Backend/src/ECommerce.Domain/ECommerce.Domain.csproj",
         "projectName": "ECommerce.Domain",
-        "projectPath": "/home/wsl-alpdev/ECommerce/Backend/src/ECommerce.Domain/ECommerce.Domain.csproj",
-        "packagesPath": "/home/wsl-alpdev/.nuget/packages/",
-        "outputPath": "/home/wsl-alpdev/ECommerce/Backend/src/ECommerce.Domain/obj/",
+        "projectPath": "/home/runner/work/ECommerce/ECommerce/Backend/src/ECommerce.Domain/ECommerce.Domain.csproj",
+        "packagesPath": "/home/runner/.nuget/packages/",
+        "outputPath": "/home/runner/work/ECommerce/ECommerce/Backend/src/ECommerce.Domain/obj/",
         "projectStyle": "PackageReference",
         "configFilePaths": [
-          "/home/wsl-alpdev/.nuget/NuGet/NuGet.Config"
+          "/home/runner/.nuget/NuGet/NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net8.0"
@@ -222,7 +234,13 @@
           "warnAsError": [
             "NU1605"
           ]
-        }
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        },
+        "SdkAnalysisLevel": "10.0.100"
       },
       "frameworks": {
         "net8.0": {
@@ -230,7 +248,7 @@
           "dependencies": {
             "Microsoft.Extensions.Identity.Stores": {
               "target": "Package",
-              "version": "[8.0.8, )"
+              "version": "[8.0.22, )"
             }
           },
           "imports": [
@@ -249,21 +267,21 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "/usr/lib/dotnet/sdk/8.0.119/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "/usr/share/dotnet/sdk/10.0.101/PortableRuntimeIdentifierGraph.json"
         }
       }
     },
-    "/home/wsl-alpdev/ECommerce/Backend/src/ECommerce.Infrastructure/ECommerce.Infrastructure.csproj": {
+    "/home/runner/work/ECommerce/ECommerce/Backend/src/ECommerce.Infrastructure/ECommerce.Infrastructure.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "/home/wsl-alpdev/ECommerce/Backend/src/ECommerce.Infrastructure/ECommerce.Infrastructure.csproj",
+        "projectUniqueName": "/home/runner/work/ECommerce/ECommerce/Backend/src/ECommerce.Infrastructure/ECommerce.Infrastructure.csproj",
         "projectName": "ECommerce.Infrastructure",
-        "projectPath": "/home/wsl-alpdev/ECommerce/Backend/src/ECommerce.Infrastructure/ECommerce.Infrastructure.csproj",
-        "packagesPath": "/home/wsl-alpdev/.nuget/packages/",
-        "outputPath": "/home/wsl-alpdev/ECommerce/Backend/src/ECommerce.Infrastructure/obj/",
+        "projectPath": "/home/runner/work/ECommerce/ECommerce/Backend/src/ECommerce.Infrastructure/ECommerce.Infrastructure.csproj",
+        "packagesPath": "/home/runner/.nuget/packages/",
+        "outputPath": "/home/runner/work/ECommerce/ECommerce/Backend/src/ECommerce.Infrastructure/obj/",
         "projectStyle": "PackageReference",
         "configFilePaths": [
-          "/home/wsl-alpdev/.nuget/NuGet/NuGet.Config"
+          "/home/runner/.nuget/NuGet/NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net8.0"
@@ -275,11 +293,11 @@
           "net8.0": {
             "targetAlias": "net8.0",
             "projectReferences": {
-              "/home/wsl-alpdev/ECommerce/Backend/src/ECommerce.Application/ECommerce.Application.csproj": {
-                "projectPath": "/home/wsl-alpdev/ECommerce/Backend/src/ECommerce.Application/ECommerce.Application.csproj"
+              "/home/runner/work/ECommerce/ECommerce/Backend/src/ECommerce.Application/ECommerce.Application.csproj": {
+                "projectPath": "/home/runner/work/ECommerce/ECommerce/Backend/src/ECommerce.Application/ECommerce.Application.csproj"
               },
-              "/home/wsl-alpdev/ECommerce/Backend/src/ECommerce.Domain/ECommerce.Domain.csproj": {
-                "projectPath": "/home/wsl-alpdev/ECommerce/Backend/src/ECommerce.Domain/ECommerce.Domain.csproj"
+              "/home/runner/work/ECommerce/ECommerce/Backend/src/ECommerce.Domain/ECommerce.Domain.csproj": {
+                "projectPath": "/home/runner/work/ECommerce/ECommerce/Backend/src/ECommerce.Domain/ECommerce.Domain.csproj"
               }
             }
           }
@@ -288,7 +306,13 @@
           "warnAsError": [
             "NU1605"
           ]
-        }
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        },
+        "SdkAnalysisLevel": "10.0.100"
       },
       "frameworks": {
         "net8.0": {
@@ -296,7 +320,7 @@
           "dependencies": {
             "MailKit": {
               "target": "Package",
-              "version": "[4.13.0, )"
+              "version": "[4.14.1, )"
             },
             "Microsoft.AspNetCore.Identity": {
               "target": "Package",
@@ -304,41 +328,41 @@
             },
             "Microsoft.AspNetCore.Identity.EntityFrameworkCore": {
               "target": "Package",
-              "version": "[8.0.8, )"
+              "version": "[8.0.22, )"
             },
             "Microsoft.EntityFrameworkCore.SqlServer": {
               "target": "Package",
-              "version": "[9.0.8, )"
+              "version": "[9.0.11, )"
             },
             "Microsoft.EntityFrameworkCore.Sqlite": {
               "target": "Package",
-              "version": "[9.0.8, )"
+              "version": "[9.0.11, )"
             },
             "Microsoft.EntityFrameworkCore.Tools": {
               "include": "Runtime, Build, Native, ContentFiles, Analyzers, BuildTransitive",
               "suppressParent": "All",
               "target": "Package",
-              "version": "[9.0.8, )"
+              "version": "[9.0.11, )"
             },
             "Microsoft.Extensions.Caching.StackExchangeRedis": {
               "target": "Package",
-              "version": "[9.0.8, )"
+              "version": "[9.0.11, )"
             },
             "Microsoft.Extensions.Identity.Core": {
               "target": "Package",
-              "version": "[8.0.8, )"
+              "version": "[8.0.22, )"
             },
             "MimeKit": {
               "target": "Package",
-              "version": "[4.13.0, )"
+              "version": "[4.14.0, )"
             },
             "Newtonsoft.Json": {
               "target": "Package",
-              "version": "[13.0.3, )"
+              "version": "[13.0.4, )"
             },
             "StackExchange.Redis": {
               "target": "Package",
-              "version": "[2.9.11, )"
+              "version": "[2.10.1, )"
             }
           },
           "imports": [
@@ -357,7 +381,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "/usr/lib/dotnet/sdk/8.0.119/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "/usr/share/dotnet/sdk/10.0.101/PortableRuntimeIdentifierGraph.json"
         }
       }
     }
