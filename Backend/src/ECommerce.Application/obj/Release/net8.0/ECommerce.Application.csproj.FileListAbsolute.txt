@@ -1,0 +1,16 @@
+/home/runner/work/ECommerce/ECommerce/Backend/src/ECommerce.Application/bin/Release/net8.0/ECommerce.Application.deps.json
+/home/runner/work/ECommerce/ECommerce/Backend/src/ECommerce.Application/bin/Release/net8.0/ECommerce.Application.dll
+/home/runner/work/ECommerce/ECommerce/Backend/src/ECommerce.Application/bin/Release/net8.0/ECommerce.Application.pdb
+/home/runner/work/ECommerce/ECommerce/Backend/src/ECommerce.Application/bin/Release/net8.0/ECommerce.Domain.dll
+/home/runner/work/ECommerce/ECommerce/Backend/src/ECommerce.Application/bin/Release/net8.0/ECommerce.Domain.pdb
+/home/runner/work/ECommerce/ECommerce/Backend/src/ECommerce.Application/obj/Release/net8.0/ECommerce.Application.csproj.AssemblyReference.cache
+/home/runner/work/ECommerce/ECommerce/Backend/src/ECommerce.Application/obj/Release/net8.0/ECommerce.Application.GeneratedMSBuildEditorConfig.editorconfig
+/home/runner/work/ECommerce/ECommerce/Backend/src/ECommerce.Application/obj/Release/net8.0/ECommerce.Application.AssemblyInfoInputs.cache
+/home/runner/work/ECommerce/ECommerce/Backend/src/ECommerce.Application/obj/Release/net8.0/ECommerce.Application.AssemblyInfo.cs
+/home/runner/work/ECommerce/ECommerce/Backend/src/ECommerce.Application/obj/Release/net8.0/ECommerce.Application.csproj.CoreCompileInputs.cache
+/home/runner/work/ECommerce/ECommerce/Backend/src/ECommerce.Application/obj/Release/net8.0/ECommerce.Application.sourcelink.json
+/home/runner/work/ECommerce/ECommerce/Backend/src/ECommerce.Application/obj/Release/net8.0/ECommerc.670E0CBE.Up2Date
+/home/runner/work/ECommerce/ECommerce/Backend/src/ECommerce.Application/obj/Release/net8.0/ECommerce.Application.dll
+/home/runner/work/ECommerce/ECommerce/Backend/src/ECommerce.Application/obj/Release/net8.0/refint/ECommerce.Application.dll
+/home/runner/work/ECommerce/ECommerce/Backend/src/ECommerce.Application/obj/Release/net8.0/ECommerce.Application.pdb
+/home/runner/work/ECommerce/ECommerce/Backend/src/ECommerce.Application/obj/Release/net8.0/ref/ECommerce.Application.dll

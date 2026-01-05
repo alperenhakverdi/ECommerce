@@ -1,20 +1,20 @@
 {
   "format": 1,
   "restore": {
-    "/home/wsl-alpdev/ECommerce/Backend/src/ECommerce.Domain/ECommerce.Domain.csproj": {}
+    "/home/runner/work/ECommerce/ECommerce/Backend/src/ECommerce.Domain/ECommerce.Domain.csproj": {}
   },
   "projects": {
-    "/home/wsl-alpdev/ECommerce/Backend/src/ECommerce.Domain/ECommerce.Domain.csproj": {
+    "/home/runner/work/ECommerce/ECommerce/Backend/src/ECommerce.Domain/ECommerce.Domain.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "/home/wsl-alpdev/ECommerce/Backend/src/ECommerce.Domain/ECommerce.Domain.csproj",
+        "projectUniqueName": "/home/runner/work/ECommerce/ECommerce/Backend/src/ECommerce.Domain/ECommerce.Domain.csproj",
         "projectName": "ECommerce.Domain",
-        "projectPath": "/home/wsl-alpdev/ECommerce/Backend/src/ECommerce.Domain/ECommerce.Domain.csproj",
-        "packagesPath": "/home/wsl-alpdev/.nuget/packages/",
-        "outputPath": "/home/wsl-alpdev/ECommerce/Backend/src/ECommerce.Domain/obj/",
+        "projectPath": "/home/runner/work/ECommerce/ECommerce/Backend/src/ECommerce.Domain/ECommerce.Domain.csproj",
+        "packagesPath": "/home/runner/.nuget/packages/",
+        "outputPath": "/home/runner/work/ECommerce/ECommerce/Backend/src/ECommerce.Domain/obj/",
         "projectStyle": "PackageReference",
         "configFilePaths": [
-          "/home/wsl-alpdev/.nuget/NuGet/NuGet.Config"
+          "/home/runner/.nuget/NuGet/NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net8.0"
@@ -32,7 +32,13 @@
           "warnAsError": [
             "NU1605"
           ]
-        }
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        },
+        "SdkAnalysisLevel": "10.0.100"
       },
       "frameworks": {
         "net8.0": {
@@ -40,7 +46,7 @@
           "dependencies": {
             "Microsoft.Extensions.Identity.Stores": {
               "target": "Package",
-              "version": "[8.0.8, )"
+              "version": "[8.0.22, )"
             }
           },
           "imports": [
@@ -59,7 +65,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "/usr/lib/dotnet/sdk/8.0.119/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "/usr/share/dotnet/sdk/10.0.101/PortableRuntimeIdentifierGraph.json"
         }
       }
     }
